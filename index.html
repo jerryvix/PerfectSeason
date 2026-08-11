@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perfect Season</title>
+<meta name="description" content="Draft against eleven other teams off the real PPR consensus board, then watch your roster play a full seventeen-week season and share how it went.">
+<meta property="og:title" content="Perfect Season">
+<meta property="og:description" content="Eight picks against eleven other teams, then seventeen weeks to find out whether you drafted a contender.">
+<meta name="theme-color" content="#0e1216">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%88%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e1216;
+    --panel:#1a212a;
+    --panel-2:#222b36;
+    --line:#2e3945;
+    --text:#e9edf1;
+    --muted:#94a2ae;
+    --amber:#f2a71b;
+    --amber-dim:#c8880f;
+    --turf:#3fa34d;
+    --rust:#c0492e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.5;
+    min-height:100dvh;
+  }
+  main{max-width:520px;margin:0 auto;padding:20px 16px 56px}
+  .screen{display:none}
+  .screen.active{display:block;animation:fadein .22s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  h1,h2,.record,.brand{
+    font-family:'Anton',sans-serif;
+    font-weight:400;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+  }
+  .mono{font-family:'JetBrains Mono',monospace}
+  .muted{color:var(--muted)}
+  .hidden{display:none !important}
+
+  .brand{
+    font-size:14px;color:var(--amber);letter-spacing:.22em;
+    margin-bottom:18px;text-align:center;
+  }
+  .kicker{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+  }
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:block;width:100%;border:0;cursor:pointer;border-radius:10px;
+    font-family:'Inter',sans-serif;font-weight:800;text-transform:uppercase;
+    letter-spacing:.08em;font-size:15px;padding:16px 20px;
+    transition:transform .08s ease,filter .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn:active{transform:scale(.985)}
+  .btn-primary{background:var(--amber);color:#141005}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-ghost{
+    background:transparent;color:var(--muted);border:1px solid var(--line);
+    font-weight:600;font-size:13px;padding:12px 16px;
+  }
+  .btn-ghost:hover{color:var(--text);border-color:var(--muted)}
+  .btn:disabled{opacity:.45;cursor:default}
+  .btn-row{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+
+  /* ---------- hero ---------- */
+  #screen-hero{padding-top:12vh;text-align:center}
+  #screen-hero h1{font-size:clamp(52px,15vw,76px);line-height:.95;color:var(--text)}
+  #screen-hero h1 span{color:var(--amber)}
+  #screen-hero .pitch{margin:22px auto 36px;max-width:400px;color:var(--muted);font-size:15px}
+
+  /* ---------- draft ---------- */
+  .draft-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px}
+  .draft-head h2{font-size:26px}
+  .draft-head .pickinfo{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber);letter-spacing:.12em;text-transform:uppercase}
+  #draft-status{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+  }
+  #draft-status.you{color:var(--amber)}
+
+  #feed-zone{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:6px 12px;margin-bottom:14px;max-height:132px;overflow-y:auto;
+  }
+  .feed-row{
+    display:flex;gap:10px;align-items:baseline;
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    padding:4px 0;border-bottom:1px solid var(--line);color:var(--muted);
+    animation:fadein .15s ease;
+  }
+  .feed-row:last-child{border-bottom:0}
+  .feed-row .fp{color:var(--muted);width:36px;flex:none}
+  .feed-row .ft{width:64px;flex:none}
+  .feed-row .fn{color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .feed-row.me .ft,.feed-row.me .fn{color:var(--amber)}
+
+  #board-zone{margin-bottom:16px}
+  #board{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cand{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;text-align:left;cursor:pointer;color:var(--text);
+    font-family:'Inter',sans-serif;transition:border-color .1s ease,transform .08s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .cand:hover{border-color:var(--amber)}
+  .cand:active{transform:scale(.97)}
+  .cand .nm{font-weight:700;font-size:13.5px;line-height:1.25}
+  .cand .meta{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);margin-top:3px}
+  .cand .meta b{color:var(--amber);font-weight:600}
+
+  .mini-roster{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 16px}
+  .mini-roster .row{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;
+  }
+  .mini-roster .row:last-child{border-bottom:0}
+  .mini-roster .slot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);width:46px;flex:none}
+  .mini-roster .who{flex:1;font-weight:600}
+  .mini-roster .who.empty{color:var(--muted);font-weight:400}
+  .mini-roster .pts{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+
+  /* ---------- review ---------- */
+  #screen-review h2{font-size:26px;margin-bottom:14px}
+  .field{margin:20px 0 6px}
+  .field label{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .field input{
+    width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    color:var(--text);font-family:'Inter',sans-serif;font-size:15px;padding:13px 14px;outline:none;
+  }
+  .field input:focus{border-color:var(--amber)}
+  .field .hint{font-size:12px;color:var(--muted);margin-top:6px}
+
+  /* ---------- result / shared ---------- */
+  .result-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:24px 20px;text-align:center;
+  }
+  .record{font-size:clamp(60px,19vw,88px);line-height:1;color:var(--text)}
+  .record .dash{color:var(--amber)}
+  .tier{
+    display:inline-block;margin:14px 0 8px;padding:7px 16px;border-radius:999px;
+    border:1px solid var(--amber);color:var(--amber);
+    font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;
+  }
+  .tier.taco{border-color:var(--rust);color:var(--rust)}
+  .tier.champ{background:var(--amber);color:#141005}
+  .proj{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;
+    color:var(--muted);margin-bottom:18px;
+  }
+  .ticker{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:18px}
+  .chip{
+    width:30px;height:30px;border-radius:7px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;
+    animation:pop .18s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+  .chip.w{background:var(--turf);color:#08130a}
+  .chip.l{background:var(--rust);color:#1c0b06}
+
+  .season-log{
+    text-align:left;border-top:1px solid var(--line);
+    margin-bottom:18px;max-height:180px;overflow-y:auto;
+  }
+  .season-log .lg{
+    display:flex;gap:8px;align-items:baseline;
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    padding:5px 0;border-bottom:1px solid var(--line);color:var(--muted);
+  }
+  .season-log .lg .wk{width:34px;flex:none}
+  .season-log .lg .op{width:66px;flex:none;color:var(--text)}
+  .season-log .lg .sc{flex:1;text-align:right;white-space:pre}
+  .season-log .lg .rs{width:16px;flex:none;text-align:right;font-weight:700}
+  .season-log .lg .rs.w{color:var(--turf)}
+  .season-log .lg .rs.l{color:var(--rust)}
+
+  .log-total{
+    display:flex;justify-content:space-between;
+    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+    color:var(--text);padding:7px 0 14px;
+  }
+  .log-total span:last-child{color:var(--muted);font-weight:400}
+
+  .roster-list{text-align:left;border-top:1px solid var(--line);padding-top:6px}
+  .roster-list .row{
+    display:flex;align-items:baseline;gap:10px;
+    padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;
+  }
+  .roster-list .row:last-child{border-bottom:0}
+  .roster-list .slot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);width:46px;flex:none}
+  .roster-list .who{flex:1;font-weight:600}
+  .roster-list .who span{color:var(--muted);font-weight:400;font-size:12px}
+  .roster-list .pts{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);flex:none}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">Perfect Season</div>
+
+  <!-- ============ HERO ============ -->
+  <section class="screen" id="screen-hero">
+    <h1>Chase<br>The <span>17-0</span></h1>
+    <p class="pitch">You get a slot in a twelve-team PPR draft and eight picks to build
+      a roster off the real consensus board, and then your team plays a full season
+      against the eleven rosters everyone else just drafted.</p>
+    <button class="btn btn-primary" id="btn-start">Start Your Draft</button>
+  </section>
+
+  <!-- ============ DRAFT ============ -->
+  <section class="screen" id="screen-draft">
+    <div class="draft-head">
+      <h2 id="draft-round">Round 1</h2>
+      <div class="pickinfo" id="draft-pick"></div>
+    </div>
+    <p id="draft-status"></p>
+    <div id="feed-zone"><div id="draft-feed"></div></div>
+    <div id="board-zone" class="hidden">
+      <div class="kicker">The best players still on the board</div>
+      <div id="board"></div>
+    </div>
+    <div class="kicker">Your Roster</div>
+    <div class="mini-roster" id="mini-roster"></div>
+  </section>
+
+  <!-- ============ REVIEW ============ -->
+  <section class="screen" id="screen-review">
+    <div class="kicker">Draft Complete</div>
+    <h2>Your 2026 Squad</h2>
+    <div class="mini-roster" id="review-roster"></div>
+    <div class="field">
+      <label for="name-input">Name your season <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input id="name-input" type="text" maxlength="20" autocomplete="off" placeholder="e.g. Jerry" spellcheck="false">
+      <p class="hint">Whatever you enter here is the name that appears when you share the season.</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-simulate">Simulate Season</button>
+      <button class="btn btn-ghost" id="btn-redraft">Restart Draft</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section class="screen" id="screen-result">
+    <div class="kicker" id="result-title">Your Perfect Season</div>
+    <div class="result-card">
+      <div class="record" id="result-record"></div>
+      <div><span class="tier" id="result-tier"></span></div>
+      <div class="proj" id="result-proj"></div>
+      <div class="ticker" id="result-ticker"></div>
+      <div class="season-log" id="result-log"></div>
+      <div class="log-total" id="result-total"></div>
+      <div class="roster-list" id="result-roster"></div>
+    </div>
+    <div class="btn-row" id="result-actions">
+      <button class="btn btn-primary" id="btn-copy-link">Copy Link</button>
+      <button class="btn btn-ghost" id="btn-copy-recap">Copy Recap</button>
+      <button class="btn btn-ghost" id="btn-again">Run It Back</button>
+    </div>
+  </section>
+
+  <!-- ============ SHARED (read-only) ============ -->
+  <section class="screen" id="screen-shared">
+    <div class="kicker" id="shared-title">Someone&rsquo;s Perfect Season</div>
+    <div class="result-card">
+      <div class="record" id="shared-record"></div>
+      <div><span class="tier" id="shared-tier"></span></div>
+      <div class="proj" id="shared-proj"></div>
+      <div class="ticker" id="shared-ticker"></div>
+      <div class="season-log" id="shared-log"></div>
+      <div class="log-total" id="shared-total"></div>
+      <div class="roster-list" id="shared-roster"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-draft-own">Draft Your Own Season</button>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   PLAYER POOL
+   116 players ordered by FantasyPros PPR consensus rank, which is the
+   same order the draft board uses and the same index that share links
+   encode. Each tuple holds the player's name, current team, position,
+   real bye week, and consensus rank. Running `node update-adp.mjs`
+   rewrites this block from the latest published rankings, so trades,
+   releases, and injuries all get picked up in a single refresh.
+   ===================================================================== */
+/* ADP:BEGIN FantasyPros PPR consensus, scraped 2026-08-07 */
+var RAW = [
+  ["Ja'Marr Chase","CIN","WR",6,1.8],["Puka Nacua","LAR","WR",11,3.1],
+  ["Bijan Robinson","ATL","RB",11,3.3],["Jahmyr Gibbs","DET","RB",6,3.3],
+  ["Jaxon Smith-Njigba","SEA","WR",11,4.5],["Amon-Ra St. Brown","DET","WR",6,5.9],
+  ["Christian McCaffrey","SF","RB",8,8.6],["CeeDee Lamb","DAL","WR",14,8.8],
+  ["Justin Jefferson","MIN","WR",6,9.2],["Jonathan Taylor","IND","RB",13,11.9],
+  ["Drake London","ATL","WR",11,12.9],["A.J. Brown","NE","WR",11,15.2],
+  ["Nico Collins","HOU","WR",8,16.6],["Ashton Jeanty","LV","RB",13,16.8],
+  ["Chase Brown","CIN","RB",6,18.6],["James Cook III","BUF","RB",7,19.1],
+  ["Trey McBride","ARI","TE",14,19.1],["George Pickens","DAL","WR",14,19.2],
+  ["Rashee Rice","KC","WR",5,20.1],["Brock Bowers","LV","TE",13,20.4],
+  ["De'Von Achane","MIA","RB",6,21],["Chris Olave","NO","WR",8,21.7],
+  ["DeVonta Smith","PHI","WR",10,24.4],["Omarion Hampton","LAC","RB",7,24.7],
+  ["Saquon Barkley","PHI","RB",10,25.2],["Josh Allen","BUF","QB",7,25.9],
+  ["Kenneth Walker III","KC","RB",5,29.6],["Zay Flowers","BAL","WR",13,29.9],
+  ["Garrett Wilson","NYJ","WR",13,30.7],["Lamar Jackson","BAL","QB",13,32.3],
+  ["Malik Nabers","NYG","WR",8,33.4],["Tetairoa McMillan","CAR","WR",5,33.5],
+  ["Tee Higgins","CIN","WR",6,35.3],["Ladd McConkey","LAC","WR",7,35.9],
+  ["Colston Loveland","CHI","TE",10,37.3],["Jaylen Waddle","DEN","WR",10,37.4],
+  ["Derrick Henry","BAL","RB",13,37.6],["Emeka Egbuka","TB","WR",10,37.7],
+  ["Drake Maye","NE","QB",11,38.3],["Jeremiyah Love","ARI","RB",14,38.4],
+  ["Breece Hall","NYJ","RB",13,40.1],["Kyren Williams","LAR","RB",11,42.1],
+  ["Terry McLaurin","WAS","WR",7,43.7],["Josh Jacobs","GB","RB",11,43.9],
+  ["Luther Burden III","CHI","WR",10,45.3],["Javonte Williams","DAL","RB",14,45.7],
+  ["Joe Burrow","CIN","QB",6,46.4],["Davante Adams","LAR","WR",11,49.1],
+  ["Travis Etienne Jr.","NO","RB",8,49.7],["Jayden Daniels","WAS","QB",7,51],
+  ["Mike Evans","SF","WR",8,51.7],["DJ Moore","BUF","WR",7,53.6],
+  ["Cam Skattebo","NYG","RB",8,53.6],["Tyler Warren","IND","TE",13,53.7],
+  ["Jameson Williams","DET","WR",6,55.4],["Christian Watson","GB","WR",11,57.7],
+  ["Jalen Hurts","PHI","QB",10,58.4],["Rome Odunze","CHI","WR",10,59.4],
+  ["Bucky Irving","TB","RB",10,60],["D'Andre Swift","CHI","RB",10,60.1],
+  ["Quinshon Judkins","CLE","RB",11,60.8],["David Montgomery","HOU","RB",8,62.5],
+  ["TreVeyon Henderson","NE","RB",11,64.1],["Carnell Tate","TEN","WR",9,66.8],
+  ["Caleb Williams","CHI","QB",10,68.6],["Justin Herbert","LAC","QB",7,69.6],
+  ["Bhayshul Tuten","JAX","RB",7,69.9],["Marvin Harrison Jr.","ARI","WR",14,70.2],
+  ["Harold Fannin Jr.","CLE","TE",11,75.1],["Jaylen Warren","PIT","RB",9,75.3],
+  ["Tucker Kraft","GB","TE",11,75.6],["Jadarian Price","SEA","RB",11,76.7],
+  ["Trevor Lawrence","JAX","QB",7,77.3],["Brian Thomas Jr.","JAX","WR",7,77.3],
+  ["DK Metcalf","PIT","WR",9,78],["Parker Washington","JAX","WR",7,78.3],
+  ["Chris Godwin Jr.","TB","WR",10,79.7],["Dak Prescott","DAL","QB",14,80],
+  ["Kyle Pitts Sr.","ATL","TE",11,80.4],["Rhamondre Stevenson","NE","RB",11,82.4],
+  ["Michael Pittman Jr.","PIT","WR",9,82.5],["Courtland Sutton","DEN","WR",10,82.7],
+  ["Alec Pierce","IND","WR",13,82.7],["Tony Pollard","TEN","RB",9,83.7],
+  ["Sam LaPorta","DET","TE",6,84.6],["Chuba Hubbard","CAR","RB",5,85.9],
+  ["Wan'Dale Robinson","TEN","WR",9,87.3],["Josh Downs","IND","WR",13,87.8],
+  ["Rico Dowdle","PIT","RB",9,88.8],["Jaxson Dart","NYG","QB",8,93.2],
+  ["RJ Harvey","DEN","RB",10,94.4],["Brock Purdy","SF","QB",8,95.3],
+  ["Travis Kelce","KC","TE",5,98.1],["Kenny Gainwell","TB","RB",10,100.3],
+  ["Bo Nix","DEN","QB",10,101.3],["J.K. Dobbins","DEN","RB",10,101.4],
+  ["Patrick Mahomes II","KC","QB",5,101.9],["Matthew Stafford","LAR","QB",11,104.1],
+  ["Kyle Monangai","CHI","RB",10,104.3],["Rachaad White","WAS","RB",7,106.2],
+  ["George Kittle","SF","TE",8,106.2],["Jared Goff","DET","QB",6,108.1],
+  ["Jake Ferguson","DAL","TE",14,110.8],["Kyler Murray","MIN","QB",6,111.8],
+  ["Dalton Kincaid","BUF","TE",7,114.7],["Baker Mayfield","TB","QB",10,118.2],
+  ["Jordan Love","GB","QB",11,119.7],["Tyler Shough","NO","QB",8,121.9],
+  ["Dallas Goedert","PHI","TE",10,122.4],["Isaiah Likely","NYG","TE",8,122.6],
+  ["Mark Andrews","BAL","TE",13,125.7],["Malik Willis","MIA","QB",6,131.5],
+  ["C.J. Stroud","HOU","QB",8,142.3],["Sam Darnold","SEA","QB",11,142.8],
+  ["Juwan Johnson","NO","TE",8,148.3],["Cam Ward","TEN","QB",9,154.1]
+];
+/* ADP:END */
+
+/* Projected PPR points per game by position rank, taken from FantasyPros
+   PPR projections. The four curves fall at very different rates, and that
+   is where the draft decisions live: the second-best tight end outscores
+   the twentieth-best receiver, even though the board prices them within a
+   few picks of each other. */
+var PPG_TABLE = {
+  QB: [22.1,21.3,20.5,19.9,19.6,19.3,19.2,19.0,18.8,18.4,18.0,17.6,
+       17.3,17.1,16.9,16.7,16.3,15.8,15.4,15.0,14.6,14.3,14.0,13.8],
+  RB: [22.5,22.0,20.8,20.8,18.0,17.4,17.4,17.2,16.7,15.3,15.2,15.0,
+       15.0,14.8,14.6,14.5,14.4,13.8,13.7,13.7,13.5,13.5,13.4,13.1,
+       12.3,12.3,12.0,11.8,11.4,11.2,11.0,10.8,9.7,9.6,9.2,9.0],
+  WR: [22.7,21.5,21.1,18.9,17.5,17.5,16.7,16.1,15.3,15.2,15.0,14.6,
+       14.4,14.3,14.2,13.8,13.5,13.4,13.3,13.3,13.2,13.1,12.8,12.5,
+       12.4,11.9,11.8,11.8,11.7,11.4,11.3,11.2,11.2,11.1,11.1,10.7,
+       10.7,10.7,10.5,10.5],
+  TE: [18.8,15.8,12.3,11.7,11.7,11.3,10.8,10.6,10.6,10.1,9.8,9.7,
+       9.6,9.6,9.5,9.1]
+};
+
+var POOL = [];
+(function buildPool(){
+  var counts = { QB:0, RB:0, WR:0, TE:0 };
+  RAW.forEach(function(entry, idx){
+    var pos = entry[2];
+    var rank = counts[pos]++;
+    var table = PPG_TABLE[pos];
+    POOL.push({ idx: idx, pos: pos, rank: rank,
+                name: entry[0], team: entry[1], bye: entry[3], ecr: entry[4],
+                ppg: table[Math.min(rank, table.length - 1)] });
+  });
+})();
+var POOL_SIZE = POOL.length; // 116
+
+/* =====================================================================
+   LEAGUE / DRAFT CONFIG — 12-team snake, 8 rounds, 96 total picks.
+   Lineup: 1 QB, 2 RB, 2 WR, 1 TE, 2 FLEX (RB/WR/TE).
+   ===================================================================== */
+var LEAGUE_TEAMS = 12;
+var ROUNDS = 8;
+var TOTAL_PICKS = LEAGUE_TEAMS * ROUNDS;
+var MINS = { QB:1, RB:2, WR:2, TE:1 };
+var USER_CAPS = { QB:1, RB:4, WR:4, TE:3 };
+var CPU_CAPS  = { QB:1, RB:5, WR:5, TE:1 };
+
+/* Seeded PRNG so a (seed, slot, picks) triple replays the exact draft
+   and season. Nothing cosmetic may consume this stream. */
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+/* Irwin-Hall approximation of a gaussian: sums and multiplies only, so
+   replays are bit-identical across JS engines (no transcendentals). */
+function gauss(rng, mean, sd){
+  var s = 0;
+  for (var i = 0; i < 12; i++) s += rng();
+  return mean + sd * (s - 6);
+}
+function shuffleRng(rng, arr){
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(rng() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function newGame(seed, slot){
+  var teams = [];
+  for (var i = 0; i < LEAGUE_TEAMS; i++) teams.push([]);
+  return {
+    seed: seed >>> 0, slot: slot, userTeam: slot - 1,
+    rng: mulberry32(seed >>> 0),
+    teams: teams, taken: {}, pickNo: 0,
+    userPicks: [], pickLabels: {}, weeks: null, wins: 0
+  };
+}
+
+function teamOnClock(pickNo){
+  var r = Math.floor(pickNo / LEAGUE_TEAMS);
+  var i = pickNo % LEAGUE_TEAMS;
+  return (r % 2 === 0) ? i : LEAGUE_TEAMS - 1 - i;
+}
+function pad2(n){ return (n < 10 ? "0" : "") + n; }
+function pickLabel(pickNo){
+  return (Math.floor(pickNo / LEAGUE_TEAMS) + 1) + "." + pad2(pickNo % LEAGUE_TEAMS + 1);
+}
+function teamName(game, t){
+  return t === game.userTeam ? "YOU" : "TEAM " + pad2(t + 1);
+}
+
+function posCounts(roster){
+  var c = { QB:0, RB:0, WR:0, TE:0 };
+  roster.forEach(function(p){ c[p.pos]++; });
+  return c;
+}
+/* A pick is legal if it respects the cap for its position and still
+   leaves enough picks to satisfy every unfilled minimum. */
+function legalForRoster(roster, player, caps){
+  var c = posCounts(roster);
+  if (c[player.pos] >= caps[player.pos]) return false;
+  c[player.pos]++;
+  var need = 0;
+  for (var pos in MINS) need += Math.max(0, MINS[pos] - c[pos]);
+  return need <= ROUNDS - roster.length - 1;
+}
+
+function applyPick(game, t, player){
+  game.taken[player.idx] = true;
+  game.teams[t].push(player);
+  game.pickLabels[player.idx] = pickLabel(game.pickNo);
+  if (t === game.userTeam) game.userPicks.push(player);
+  game.pickNo++;
+}
+
+/* The computer teams draft the consensus board with a little noise, so
+   they reach and they fall the way a real room does. They never reason
+   about how steeply a position scores, which is the opening the drafter
+   is meant to find. */
+function cpuPick(game, t){
+  var roster = game.teams[t];
+  var best = null, bestScore = Infinity;
+  for (var i = 0; i < POOL.length; i++){
+    var p = POOL[i];
+    if (game.taken[p.idx] || !legalForRoster(roster, p, CPU_CAPS)) continue;
+    /* The noise grows with a player's rank because that is how real rooms
+       behave: the first round follows consensus almost exactly, while the
+       late rounds are full of reaches and personal favorites. */
+    var score = p.ecr + gauss(game.rng, 0, 2 + p.ecr * 0.06);
+    if (score < bestScore){ bestScore = score; best = p; }
+  }
+  if (!best){ /* caps too tight this late; fall back to any feasible player */
+    for (var k = 0; k < POOL.length; k++){
+      var q = POOL[k];
+      if (!game.taken[q.idx] && legalForRoster(roster, q, {QB:9,RB:9,WR:9,TE:9})){ best = q; break; }
+    }
+  }
+  if (!best){ /* pool ran dry for every need; take best available outright */
+    for (var m = 0; m < POOL.length; m++){
+      if (!game.taken[POOL[m].idx]){ best = POOL[m]; break; }
+    }
+  }
+  return best;
+}
+
+/* The board shows the ten best players still available by consensus
+   rank, filtered to those who can still complete a legal lineup. If a
+   depleted pool ever leaves nothing legal, it falls back to plain best
+   available so the draft can always finish. */
+function boardFor(game){
+  var roster = game.teams[game.userTeam];
+  var out = [];
+  for (var i = 0; i < POOL.length && out.length < 10; i++){
+    var p = POOL[i];
+    if (!game.taken[p.idx] && legalForRoster(roster, p, USER_CAPS)) out.push(p);
+  }
+  if (!out.length){
+    for (var k = 0; k < POOL.length && out.length < 10; k++){
+      if (!game.taken[POOL[k].idx]) out.push(POOL[k]);
+    }
+  }
+  return out;
+}
+
+/* =====================================================================
+   SEASON SIMULATION — 17 weeks against the 11 rosters the CPU teams
+   actually drafted, playing each of them once and then six of them a
+   second time. Every player draws a score around his projection and
+   contributes nothing during his bye week, so a roster that stacks its
+   byes into one weekend will feel it.
+   ===================================================================== */
+/* Week-to-week swing differs by position. Quarterbacks are the steadiest
+   scorers in PPR, backs and receivers swing harder with game script, and
+   tight ends are the most touchdown-dependent of all, so each position
+   gets its own variance rather than one shared number. */
+var WEEKLY_SIGMA = { QB: 0.10, RB: 0.13, WR: 0.13, TE: 0.16 };
+function scoreRoster(rng, roster, week){
+  var total = 0;
+  roster.forEach(function(p){
+    if (p.bye === week) return;
+    total += Math.max(0, gauss(rng, p.ppg, WEEKLY_SIGMA[p.pos] * p.ppg));
+  });
+  return Math.round(total * 10) / 10;
+}
+
+function simulateSeason(game){
+  var cpuIdx = [];
+  for (var t = 0; t < LEAGUE_TEAMS; t++) if (t !== game.userTeam) cpuIdx.push(t);
+  var sched = shuffleRng(game.rng, cpuIdx).concat(shuffleRng(game.rng, cpuIdx)).slice(0, 17);
+  var user = game.teams[game.userTeam];
+  var weeks = [];
+  for (var w = 1; w <= 17; w++){
+    var opp = sched[w - 1];
+    var mine = scoreRoster(game.rng, user, w);
+    var theirs = scoreRoster(game.rng, game.teams[opp], w);
+    weeks.push({ week: w, opp: opp, team: mine, oppScore: theirs, win: mine > theirs });
+  }
+  return weeks;
+}
+
+function projPpg(roster){
+  return Math.round(roster.reduce(function(s, p){ return s + p.ppg; }, 0) * 10) / 10;
+}
+function leagueMedian(game){
+  var totals = [];
+  for (var t = 0; t < LEAGUE_TEAMS; t++)
+    if (t !== game.userTeam) totals.push(projPpg(game.teams[t]));
+  totals.sort(function(a, b){ return a - b; });
+  return totals[Math.floor(totals.length / 2)];
+}
+
+function tierFor(wins){
+  if (wins === 17) return { name:"Perfect Season", cls:"champ" };
+  if (wins >= 15)  return { name:"Championship Threat", cls:"champ" };
+  if (wins >= 12)  return { name:"Contender", cls:"" };
+  if (wins >= 9)   return { name:"Pretender", cls:"" };
+  if (wins >= 5)   return { name:"Basement Dweller", cls:"taco" };
+  return { name:"Taco", cls:"taco" };
+}
+
+/* =====================================================================
+   SHARE CODEC v3 — a full deterministic replay packed into the URL.
+   Payload: 4-bit version (=3) + 4-bit slot (0-11) + 8 x 7-bit user pick
+   pool indexes (draft order) + 32-bit seed = 96 bits = 12 bytes =
+   16-char base64url in ?s=. Optional readable name in &n=.
+   Decoding re-runs the whole draft with the seed, forcing the user's
+   picks at the user's turns, then re-runs the season. Anything
+   malformed throws; the boot sequence catches and shows the hero.
+   ===================================================================== */
+var SHARE_VERSION = 5; /* SHARE_VERSION_MARKER: bumped by update-adp.mjs on data refresh */
+
+function encodeShare(game){
+  var bits = [];
+  function push(val, n){ for (var i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); }
+  push(SHARE_VERSION, 4);
+  push(game.userTeam, 4);
+  game.userPicks.forEach(function(p){ push(p.idx, 7); });
+  push(game.seed, 32);
+  var bin = "";
+  for (var i = 0; i < bits.length; i += 8){
+    var b = 0;
+    for (var j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+    bin += String.fromCharCode(b);
+  }
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/* Replay a season from its raw parts. Throws on anything inconsistent. */
+function playSeason(seed, slot, forcedIdxs){
+  var game = newGame(seed, slot);
+  var forced = forcedIdxs.slice();
+  while (game.pickNo < TOTAL_PICKS){
+    var t = teamOnClock(game.pickNo);
+    if (t === game.userTeam){
+      if (!forced.length) throw new Error("missing pick");
+      var idx = forced.shift();
+      /* exact validation: the pick must be on the same board the
+         interactive draft would have shown at this turn */
+      var onBoard = boardFor(game).some(function(p){ return p.idx === idx; });
+      if (!onBoard) throw new Error("pick not on board");
+      applyPick(game, t, POOL[idx]);
+    } else {
+      applyPick(game, t, cpuPick(game, t));
+    }
+  }
+  if (forced.length) throw new Error("extra picks");
+  game.weeks = simulateSeason(game);
+  game.wins = game.weeks.filter(function(w){ return w.win; }).length;
+  return game;
+}
+
+function decodeShare(str){
+  if (!/^[A-Za-z0-9_-]{16}$/.test(str)) throw new Error("bad format");
+  var bin = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+  if (bin.length !== 12) throw new Error("bad length");
+  var bits = [];
+  for (var i = 0; i < bin.length; i++){
+    var b = bin.charCodeAt(i);
+    for (var j = 7; j >= 0; j--) bits.push((b >> j) & 1);
+  }
+  var pos = 0;
+  function read(n){
+    var v = 0;
+    for (var k = 0; k < n; k++) v = ((v * 2) + bits[pos++]) >>> 0;
+    return v;
+  }
+  if (read(4) !== SHARE_VERSION) throw new Error("bad version");
+  var userTeam = read(4);
+  if (userTeam >= LEAGUE_TEAMS) throw new Error("bad slot");
+  var seen = {}, idxs = [];
+  for (var s = 0; s < ROUNDS; s++){
+    var idx = read(7);
+    if (idx >= POOL_SIZE || seen[idx]) throw new Error("bad pick");
+    seen[idx] = true;
+    idxs.push(idx);
+  }
+  var seed = read(32);
+  return playSeason(seed, userTeam + 1, idxs);
+}
+
+function buildShareUrl(game, name){
+  var base = location.href.replace(/[?#].*$/, "");
+  var url = base + "?s=" + encodeShare(game);
+  if (name) url += "&n=" + encodeURIComponent(name);
+  return url;
+}
+
+/* =====================================================================
+   RENDERING & FLOW
+   ===================================================================== */
+function $(id){ return document.getElementById(id); }
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(function(el){
+    el.classList.toggle("active", el.id === id);
+  });
+  window.scrollTo(0, 0);
+}
+
+/* Lineup display order, auto-assigned from picks. */
+var SLOT_ORDER = ["QB","RB1","RB2","WR1","WR2","TE","FLEX1","FLEX2"];
+function assignSlots(players){
+  var slots = {};
+  var flex = [];
+  players.forEach(function(p){
+    if (p.pos === "QB" && !slots.QB) slots.QB = p;
+    else if (p.pos === "RB" && !slots.RB1) slots.RB1 = p;
+    else if (p.pos === "RB" && !slots.RB2) slots.RB2 = p;
+    else if (p.pos === "WR" && !slots.WR1) slots.WR1 = p;
+    else if (p.pos === "WR" && !slots.WR2) slots.WR2 = p;
+    else if (p.pos === "TE" && !slots.TE) slots.TE = p;
+    else flex.push(p);
+  });
+  if (flex[0]) slots.FLEX1 = flex[0];
+  if (flex[1]) slots.FLEX2 = flex[1];
+  return SLOT_ORDER.map(function(label){ return { slot: label, player: slots[label] || null }; });
+}
+
+function renderRosterRows(container, players){
+  container.textContent = "";
+  assignSlots(players).forEach(function(entry){
+    var row = document.createElement("div");
+    row.className = "row";
+    var sl = document.createElement("span");
+    sl.className = "slot"; sl.textContent = entry.slot;
+    var who = document.createElement("span");
+    var pts = document.createElement("span");
+    pts.className = "pts";
+    if (entry.player){
+      var p = entry.player;
+      who.className = "who";
+      who.textContent = p.name + " · " + p.team;
+      pts.textContent = (game ? game.pickLabels[p.idx] + " · " : "") + p.ppg.toFixed(1);
+    } else {
+      who.className = "who empty";
+      who.textContent = "-";
+      pts.textContent = "";
+    }
+    row.appendChild(sl); row.appendChild(who); row.appendChild(pts);
+    container.appendChild(row);
+  });
+}
+
+function renderResultRoster(container, g){
+  container.textContent = "";
+  assignSlots(g.userPicks).forEach(function(entry){
+    var p = entry.player;
+    if (!p) return;
+    var row = document.createElement("div");
+    row.className = "row";
+    var sl = document.createElement("span");
+    sl.className = "slot"; sl.textContent = entry.slot;
+    var who = document.createElement("span");
+    who.className = "who";
+    who.textContent = p.name + " ";
+    var meta = document.createElement("span");
+    meta.textContent = p.team + " · " + g.pickLabels[p.idx];
+    who.appendChild(meta);
+    var pts = document.createElement("span");
+    pts.className = "pts";
+    pts.textContent = p.ppg.toFixed(1);
+    row.appendChild(sl); row.appendChild(who); row.appendChild(pts);
+    container.appendChild(row);
+  });
+}
+
+function makeChip(win, title){
+  var chip = document.createElement("span");
+  chip.className = "chip " + (win ? "w" : "l");
+  chip.textContent = win ? "W" : "L";
+  if (title) chip.title = title;
+  return chip;
+}
+
+function setRecord(el, wins){
+  el.textContent = "";
+  el.appendChild(document.createTextNode(String(wins)));
+  var dash = document.createElement("span");
+  dash.className = "dash"; dash.textContent = "-";
+  el.appendChild(dash);
+  el.appendChild(document.createTextNode(String(17 - wins)));
+}
+
+function setTier(tierEl, wins){
+  var tier = tierFor(wins);
+  tierEl.className = "tier" + (tier.cls ? " " + tier.cls : "");
+  tierEl.textContent = tier.name;
+}
+
+function setProj(el, g){
+  el.textContent = "Projected " + projPpg(g.teams[g.userTeam]).toFixed(1) +
+    " PPG · League median " + leagueMedian(g).toFixed(1);
+}
+
+function setSeasonTotals(el, g){
+  var scored = 0, allowed = 0;
+  g.weeks.forEach(function(w){ scored += w.team; allowed += w.oppScore; });
+  el.textContent = "";
+  var label = document.createElement("span");
+  label.textContent = scored.toFixed(1) + " scored";
+  var against = document.createElement("span");
+  against.textContent = allowed.toFixed(1) + " allowed";
+  el.appendChild(label); el.appendChild(against);
+}
+
+function renderSeasonLog(container, g){
+  container.textContent = "";
+  g.weeks.forEach(function(w){
+    var row = document.createElement("div");
+    row.className = "lg";
+    var wk = document.createElement("span");
+    wk.className = "wk"; wk.textContent = "W" + pad2(w.week);
+    var op = document.createElement("span");
+    op.className = "op"; op.textContent = teamName(g, w.opp);
+    var sc = document.createElement("span");
+    sc.className = "sc";
+    sc.textContent = w.team.toFixed(1).padStart(5) + " - " + w.oppScore.toFixed(1).padStart(5);
+    var rs = document.createElement("span");
+    rs.className = "rs " + (w.win ? "w" : "l");
+    rs.textContent = w.win ? "W" : "L";
+    row.appendChild(wk); row.appendChild(op); row.appendChild(sc); row.appendChild(rs);
+    container.appendChild(row);
+  });
+}
+
+/* ---------- interactive draft ---------- */
+var game = null;
+var cpuTimer = null;
+
+function startDraft(){
+  if (cpuTimer){ clearInterval(cpuTimer); cpuTimer = null; }
+  var seed = Math.floor(Math.random() * 4294967296) >>> 0;
+  var slot = 1 + Math.floor(Math.random() * LEAGUE_TEAMS);
+  game = newGame(seed, slot);
+  $("draft-feed").textContent = "";
+  $("board").textContent = "";
+  $("board-zone").classList.add("hidden");
+  setStatus("You are drafting from the number " + slot + " slot", false);
+  renderDraftHead();
+  renderRosterRows($("mini-roster"), game.userPicks);
+  showScreen("screen-draft");
+  setTimeout(advanceDraft, 600);
+}
+
+function setStatus(text, you){
+  var el = $("draft-status");
+  el.textContent = text;
+  el.className = you ? "you" : "";
+}
+
+function renderDraftHead(){
+  var pickNo = Math.min(game.pickNo, TOTAL_PICKS - 1);
+  $("draft-round").textContent = "Round " + (Math.floor(pickNo / LEAGUE_TEAMS) + 1);
+  $("draft-pick").textContent = "Pick " + pickLabel(pickNo) + " · #" + (pickNo + 1);
+}
+
+function addFeedRow(g, t, player, pickNo){
+  var row = document.createElement("div");
+  row.className = "feed-row" + (t === g.userTeam ? " me" : "");
+  var fp = document.createElement("span");
+  fp.className = "fp"; fp.textContent = pickLabel(pickNo);
+  var ft = document.createElement("span");
+  ft.className = "ft"; ft.textContent = teamName(g, t);
+  var fn = document.createElement("span");
+  fn.className = "fn"; fn.textContent = player.name + " · " + player.pos;
+  row.appendChild(fp); row.appendChild(ft); row.appendChild(fn);
+  var feed = $("draft-feed");
+  feed.insertBefore(row, feed.firstChild);
+}
+
+function advanceDraft(){
+  renderDraftHead();
+  if (game.pickNo >= TOTAL_PICKS){ finishDraft(); return; }
+  var t = teamOnClock(game.pickNo);
+  if (t === game.userTeam){ renderBoard(); return; }
+  $("board-zone").classList.add("hidden");
+  cpuTimer = setInterval(function(){
+    if (game.pickNo >= TOTAL_PICKS){
+      clearInterval(cpuTimer); cpuTimer = null;
+      finishDraft(); return;
+    }
+    var team = teamOnClock(game.pickNo);
+    if (team === game.userTeam){
+      clearInterval(cpuTimer); cpuTimer = null;
+      renderBoard(); return;
+    }
+    setStatus(teamName(game, team) + " is on the clock", false);
+    var pickNo = game.pickNo;
+    applyPick(game, team, cpuPick(game, team));
+    addFeedRow(game, team, game.teams[team][game.teams[team].length - 1], pickNo);
+    renderDraftHead();
+  }, 80);
+}
+
+function renderBoard(){
+  renderDraftHead();
+  setStatus("You are on the clock", true);
+  var box = $("board");
+  box.textContent = "";
+  boardFor(game).forEach(function(p){
+    var card = document.createElement("button");
+    card.type = "button";
+    card.className = "cand";
+    card.dataset.pos = p.pos;
+    var nm = document.createElement("div");
+    nm.className = "nm"; nm.textContent = p.name;
+    var meta = document.createElement("div");
+    meta.className = "meta";
+    meta.innerHTML = "ECR " + p.ecr.toFixed(1) + " · " + p.pos + (p.rank + 1) + " · " + p.team +
+      " · <b>" + p.ppg.toFixed(1) + "</b> · bye " + p.bye;
+    card.appendChild(nm); card.appendChild(meta);
+    card.addEventListener("click", function(){ userPick(p); });
+    box.appendChild(card);
+  });
+  $("board-zone").classList.remove("hidden");
+}
+
+function userPick(player){
+  if (teamOnClock(game.pickNo) !== game.userTeam) return;
+  var pickNo = game.pickNo;
+  applyPick(game, game.userTeam, player);
+  addFeedRow(game, game.userTeam, player, pickNo);
+  $("board-zone").classList.add("hidden");
+  renderRosterRows($("mini-roster"), game.userPicks);
+  advanceDraft();
+}
+
+function finishDraft(){
+  renderRosterRows($("review-roster"), game.userPicks);
+  showScreen("screen-review");
+}
+
+/* ---------- season + result ---------- */
+function runSeason(){
+  var name = $("name-input").value.trim().slice(0, 20);
+  game.name = name;
+  game.weeks = simulateSeason(game);
+  game.wins = game.weeks.filter(function(w){ return w.win; }).length;
+
+  $("result-title").textContent = name ? name + "’s Perfect Season" : "Your Perfect Season";
+  var ticker = $("result-ticker");
+  ticker.textContent = "";
+  ["result-record","result-tier","result-proj","result-log","result-total","result-actions"].forEach(function(id){
+    $(id).classList.add("hidden");
+  });
+  renderResultRoster($("result-roster"), game);
+  showScreen("screen-result");
+
+  game.weeks.forEach(function(w, i){
+    setTimeout(function(){
+      ticker.appendChild(makeChip(w.win,
+        "Wk " + w.week + " vs " + teamName(game, w.opp) + ": " +
+        w.team.toFixed(1) + " - " + w.oppScore.toFixed(1)));
+    }, 120 * i);
+  });
+  setTimeout(function(){
+    setRecord($("result-record"), game.wins);
+    setTier($("result-tier"), game.wins);
+    setProj($("result-proj"), game);
+    renderSeasonLog($("result-log"), game);
+    setSeasonTotals($("result-total"), game);
+    ["result-record","result-tier","result-proj","result-log","result-total","result-actions"].forEach(function(id){
+      $(id).classList.remove("hidden");
+    });
+  }, 120 * 17 + 220);
+}
+
+function recapText(){
+  var tier = tierFor(game.wins);
+  var lines = [];
+  lines.push((game.name ? game.name + "'s" : "My") + " Perfect Season 2026");
+  lines.push(game.wins + "-" + (17 - game.wins) + " · " + tier.name);
+  lines.push(game.weeks.map(function(w){ return w.win ? "W" : "L"; }).join(" "));
+  var scored = 0, allowed = 0;
+  game.weeks.forEach(function(w){ scored += w.team; allowed += w.oppScore; });
+  lines.push("Projected " + projPpg(game.teams[game.userTeam]).toFixed(1) +
+             " PPG · League median " + leagueMedian(game).toFixed(1));
+  lines.push(scored.toFixed(1) + " scored · " + allowed.toFixed(1) + " allowed");
+  lines.push("");
+  assignSlots(game.userPicks).forEach(function(entry){
+    if (!entry.player) return;
+    var p = entry.player;
+    lines.push(entry.slot + "  " + p.name + " (" + p.team + ") · " +
+               game.pickLabels[p.idx] + " · " + p.ppg.toFixed(1));
+  });
+  return lines.join("\n");
+}
+
+function copyToClipboard(text, btn){
+  var original = btn.textContent;
+  function done(){
+    btn.textContent = "Copied";
+    setTimeout(function(){ btn.textContent = original; }, 1500);
+  }
+  function legacy(){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); done(); } catch(e){ /* nothing left to try */ }
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, legacy);
+  } else {
+    legacy();
+  }
+}
+
+/* ---------- shared (read-only) view ---------- */
+function renderShared(g, name){
+  var clean = (name || "").trim().slice(0, 20);
+  $("shared-title").textContent = (clean || "Someone") + "’s Perfect Season";
+  setRecord($("shared-record"), g.wins);
+  setTier($("shared-tier"), g.wins);
+  setProj($("shared-proj"), g);
+  var ticker = $("shared-ticker");
+  ticker.textContent = "";
+  g.weeks.forEach(function(w){
+    ticker.appendChild(makeChip(w.win,
+      "Wk " + w.week + " vs " + teamName(g, w.opp) + ": " +
+      w.team.toFixed(1) + " - " + w.oppScore.toFixed(1)));
+  });
+  renderSeasonLog($("shared-log"), g);
+  setSeasonTotals($("shared-total"), g);
+  renderResultRoster($("shared-roster"), g);
+  showScreen("screen-shared");
+}
+
+/* ---------- wire up ---------- */
+$("btn-start").addEventListener("click", startDraft);
+$("btn-redraft").addEventListener("click", startDraft);
+$("btn-simulate").addEventListener("click", runSeason);
+$("btn-again").addEventListener("click", function(){
+  $("name-input").value = "";
+  startDraft();
+});
+$("btn-copy-recap").addEventListener("click", function(){
+  copyToClipboard(recapText(), $("btn-copy-recap"));
+});
+$("btn-copy-link").addEventListener("click", function(){
+  copyToClipboard(buildShareUrl(game, game.name), $("btn-copy-link"));
+});
+$("btn-draft-own").addEventListener("click", function(){
+  history.replaceState(null, "", location.pathname);
+  startDraft();
+});
+
+/* ---------- boot: shared link first, hero otherwise ---------- */
+(function boot(){
+  var params = new URLSearchParams(location.search);
+  var s = params.get("s");
+  if (s){
+    try {
+      renderShared(decodeShare(s), params.get("n") || "");
+      return;
+    } catch (e){
+      history.replaceState(null, "", location.pathname);
+    }
+  }
+  showScreen("screen-hero");
+})();
+</script>
+</body>
+</html>
