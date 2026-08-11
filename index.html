@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perfect Season</title>
+<meta name="description" content="Draft a 7-man 2026 fantasy roster with tier spins, simulate a 17-week season, and share your record with a link.">
+<meta property="og:title" content="Perfect Season">
+<meta property="og:description" content="Spin the tiers, draft 7 players, survive 17 weeks. Can you go 17-0?">
+<meta name="theme-color" content="#0e1216">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%88%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e1216;
+    --panel:#1a212a;
+    --panel-2:#222b36;
+    --line:#2e3945;
+    --text:#e9edf1;
+    --muted:#94a2ae;
+    --amber:#f2a71b;
+    --amber-dim:#c8880f;
+    --turf:#3fa34d;
+    --rust:#c0492e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.5;
+    min-height:100dvh;
+  }
+  main{max-width:520px;margin:0 auto;padding:20px 16px 56px}
+  .screen{display:none}
+  .screen.active{display:block;animation:fadein .25s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  h1,h2,.record,.brand{
+    font-family:'Anton',sans-serif;
+    font-weight:400;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+  }
+  .mono{font-family:'JetBrains Mono',monospace}
+  .muted{color:var(--muted)}
+  .hidden{display:none !important}
+
+  .brand{
+    font-size:14px;color:var(--amber);letter-spacing:.22em;
+    margin-bottom:18px;text-align:center;
+  }
+  .kicker{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+  }
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:block;width:100%;border:0;cursor:pointer;border-radius:10px;
+    font-family:'Inter',sans-serif;font-weight:800;text-transform:uppercase;
+    letter-spacing:.08em;font-size:15px;padding:16px 20px;
+    transition:transform .08s ease,filter .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn:active{transform:scale(.985)}
+  .btn-primary{background:var(--amber);color:#141005}
+  .btn-primary:hover{filter:brightness(1.07)}
+  .btn-ghost{
+    background:transparent;color:var(--muted);border:1px solid var(--line);
+    font-weight:600;font-size:13px;padding:12px 16px;
+  }
+  .btn-ghost:hover{color:var(--text);border-color:var(--muted)}
+  .btn:disabled{opacity:.45;cursor:default}
+  .btn-row{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+
+  /* ---------- hero ---------- */
+  #screen-hero{padding-top:9vh;text-align:center}
+  #screen-hero h1{font-size:clamp(52px,15vw,76px);line-height:.95;color:var(--text)}
+  #screen-hero h1 span{color:var(--amber)}
+  #screen-hero .pitch{margin:22px auto 30px;max-width:400px;color:var(--muted);font-size:15px}
+  #screen-hero .rules{
+    margin:0 auto 34px;max-width:360px;text-align:left;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+  }
+  #screen-hero .rules li{
+    list-style:none;font-size:13px;color:var(--muted);padding:5px 0;
+  }
+  #screen-hero .rules li b{color:var(--text);font-weight:600}
+  #screen-hero .rules .n{
+    color:var(--amber);font-family:'JetBrains Mono',monospace;font-weight:700;margin-right:8px;
+  }
+
+  /* ---------- draft ---------- */
+  .draft-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
+  .draft-head h2{font-size:26px}
+  .draft-head .round{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber);letter-spacing:.14em}
+  #tier-hint{font-size:13px;color:var(--muted);margin-bottom:16px}
+  #tier-hint b{color:var(--amber);font-weight:600}
+
+  #spin-zone{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:18px;margin-bottom:18px;
+  }
+  #spin-strip{
+    font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;
+    text-align:center;padding:22px 8px;color:var(--amber);
+    border:1px dashed var(--line);border-radius:10px;margin-bottom:14px;
+    min-height:70px;display:flex;align-items:center;justify-content:center;
+    overflow:hidden;white-space:nowrap;
+  }
+  #spin-strip.idle{color:var(--muted);font-size:13px;font-weight:400;letter-spacing:.1em;text-transform:uppercase}
+
+  #candidates{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cand{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;text-align:left;cursor:pointer;color:var(--text);
+    font-family:'Inter',sans-serif;transition:border-color .1s ease,transform .08s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .cand:hover{border-color:var(--amber)}
+  .cand:active{transform:scale(.97)}
+  .cand .nm{font-weight:700;font-size:13.5px;line-height:1.25}
+  .cand .meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:3px}
+  .cand .meta b{color:var(--amber);font-weight:600}
+
+  .mini-roster{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 16px}
+  .mini-roster .row{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;
+  }
+  .mini-roster .row:last-child{border-bottom:0}
+  .mini-roster .slot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);width:44px;flex:none}
+  .mini-roster .who{flex:1;font-weight:600}
+  .mini-roster .who.empty{color:var(--muted);font-weight:400}
+  .mini-roster .pts{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+
+  /* ---------- review ---------- */
+  #screen-review h2,#screen-result h2,#screen-shared h2{font-size:26px;margin-bottom:14px}
+  .field{margin:20px 0 6px}
+  .field label{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .field input{
+    width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    color:var(--text);font-family:'Inter',sans-serif;font-size:15px;padding:13px 14px;outline:none;
+  }
+  .field input:focus{border-color:var(--amber)}
+  .field .hint{font-size:12px;color:var(--muted);margin-top:6px}
+
+  /* ---------- result / shared ---------- */
+  .result-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:24px 20px;text-align:center;
+  }
+  .record{font-size:clamp(64px,20vw,92px);line-height:1;color:var(--text)}
+  .record .dash{color:var(--amber)}
+  .tagline{
+    font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--amber);margin:10px 0 20px;
+  }
+  .ticker{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:22px}
+  .chip{
+    width:30px;height:30px;border-radius:7px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;
+    animation:pop .18s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+  .chip.w{background:var(--turf);color:#08130a}
+  .chip.l{background:var(--rust);color:#1c0b06}
+  .roster-list{text-align:left;border-top:1px solid var(--line);padding-top:6px}
+  .roster-list .row{
+    display:flex;align-items:baseline;gap:10px;
+    padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;
+  }
+  .roster-list .row:last-child{border-bottom:0}
+  .roster-list .slot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);width:42px;flex:none}
+  .roster-list .who{flex:1;font-weight:600}
+  .roster-list .who span{color:var(--muted);font-weight:400;font-size:12px}
+  .roster-list .pts{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);flex:none}
+
+  footer{
+    text-align:center;margin-top:34px;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);opacity:.7;
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">Perfect Season</div>
+
+  <!-- ============ HERO ============ -->
+  <section class="screen" id="screen-hero">
+    <h1>Chase<br>The <span>17&#8211;0</span></h1>
+    <p class="pitch">Draft a 7-man 2026 roster off pure tier luck, then survive a 17-week season. Most teams don't. Will yours?</p>
+    <ul class="rules">
+      <li><span class="n">01</span><b>Spin the tier.</b> Each round deals you 10 players.</li>
+      <li><span class="n">02</span><b>Pick one.</b> Seven rounds, seven roster spots.</li>
+      <li><span class="n">03</span><b>Simulate.</b> 17 weeks, real variance, no mercy.</li>
+      <li><span class="n">04</span><b>Share it.</b> One link, no login, receipts included.</li>
+    </ul>
+    <button class="btn btn-primary" id="btn-start">Start Your Draft</button>
+  </section>
+
+  <!-- ============ DRAFT ============ -->
+  <section class="screen" id="screen-draft">
+    <div class="draft-head">
+      <h2 id="draft-slot">QB</h2>
+      <div class="round" id="draft-round">ROUND 1 / 7</div>
+    </div>
+    <p id="tier-hint"></p>
+    <div id="spin-zone">
+      <div id="spin-strip" class="idle">Ready to spin</div>
+      <button class="btn btn-primary" id="btn-spin">Spin The Tier</button>
+      <div id="candidates" class="hidden"></div>
+    </div>
+    <div class="kicker">Your Roster</div>
+    <div class="mini-roster" id="mini-roster"></div>
+  </section>
+
+  <!-- ============ REVIEW ============ -->
+  <section class="screen" id="screen-review">
+    <div class="kicker">Draft Complete</div>
+    <h2>Your 2026 Squad</h2>
+    <div class="mini-roster" id="review-roster"></div>
+    <div class="field">
+      <label for="name-input">Name your season <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input id="name-input" type="text" maxlength="20" autocomplete="off" placeholder="e.g. Jerry" spellcheck="false">
+      <p class="hint">Only used on the share card &mdash; &ldquo;Jerry&rsquo;s Perfect Season.&rdquo;</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-simulate">Simulate The Season</button>
+      <button class="btn btn-ghost" id="btn-redraft">Scrap It &mdash; Redraft</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section class="screen" id="screen-result">
+    <div class="kicker" id="result-title">Your Perfect Season</div>
+    <div class="result-card">
+      <div class="record" id="result-record"></div>
+      <div class="tagline" id="result-tagline"></div>
+      <div class="ticker" id="result-ticker"></div>
+      <div class="roster-list" id="result-roster"></div>
+    </div>
+    <div class="btn-row" id="result-actions">
+      <button class="btn btn-primary" id="btn-copy-link">Copy Shareable Link</button>
+      <button class="btn btn-ghost" id="btn-copy-recap">Copy Recap</button>
+      <button class="btn btn-ghost" id="btn-again">Draft Again</button>
+    </div>
+  </section>
+
+  <!-- ============ SHARED (read-only) ============ -->
+  <section class="screen" id="screen-shared">
+    <div class="kicker" id="shared-title">Someone&rsquo;s Perfect Season</div>
+    <div class="result-card">
+      <div class="record" id="shared-record"></div>
+      <div class="tagline" id="shared-tagline"></div>
+      <div class="ticker" id="shared-ticker"></div>
+      <div class="roster-list" id="shared-roster"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-draft-own">Draft Your Own Season</button>
+    </div>
+  </section>
+
+  <footer>Perfect Season &middot; 2026 &middot; no logins, just links</footer>
+</main>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   PLAYER POOL — 116 players: 24 QB, 36 RB, 40 WR, 16 TE.
+   Order within each position IS the position rank; global index is what
+   share links encode. PPG comes from a per-position decay curve; bye
+   weeks are invented (the real 2026 schedule isn't out) purely for
+   in-game texture.
+   ===================================================================== */
+var RAW = {
+  QB: [
+    ["Josh Allen","BUF"],["Lamar Jackson","BAL"],["Jayden Daniels","WAS"],
+    ["Jalen Hurts","PHI"],["Joe Burrow","CIN"],["Patrick Mahomes","KC"],
+    ["Baker Mayfield","TB"],["Justin Herbert","LAC"],["Kyler Murray","ARI"],
+    ["C.J. Stroud","HOU"],["Jordan Love","GB"],["Brock Purdy","SF"],
+    ["Caleb Williams","CHI"],["Dak Prescott","DAL"],["Bo Nix","DEN"],
+    ["Jared Goff","DET"],["Tua Tagovailoa","MIA"],["Trevor Lawrence","JAX"],
+    ["Justin Fields","NYJ"],["Drake Maye","NE"],["J.J. McCarthy","MIN"],
+    ["Bryce Young","CAR"],["Geno Smith","LV"],["Michael Penix Jr.","ATL"]
+  ],
+  RB: [
+    ["Bijan Robinson","ATL"],["Saquon Barkley","PHI"],["Jahmyr Gibbs","DET"],
+    ["Christian McCaffrey","SF"],["Ashton Jeanty","LV"],["De'Von Achane","MIA"],
+    ["Derrick Henry","BAL"],["Josh Jacobs","GB"],["Kyren Williams","LAR"],
+    ["Jonathan Taylor","IND"],["Chase Brown","CIN"],["James Cook","BUF"],
+    ["Bucky Irving","TB"],["Kenneth Walker III","SEA"],["Chuba Hubbard","CAR"],
+    ["James Conner","ARI"],["Omarion Hampton","LAC"],["Breece Hall","NYJ"],
+    ["Alvin Kamara","NO"],["David Montgomery","DET"],["Aaron Jones","MIN"],
+    ["Joe Mixon","HOU"],["Quinshon Judkins","CLE"],["RJ Harvey","DEN"],
+    ["TreVeyon Henderson","NE"],["Kaleb Johnson","PIT"],["D'Andre Swift","CHI"],
+    ["Tony Pollard","TEN"],["Isiah Pacheco","KC"],["Javonte Williams","DAL"],
+    ["Zach Charbonnet","SEA"],["Brian Robinson Jr.","WAS"],["Tyrone Tracy Jr.","NYG"],
+    ["Jaylen Warren","PIT"],["Rachaad White","TB"],["Najee Harris","LAC"]
+  ],
+  WR: [
+    ["Ja'Marr Chase","CIN"],["Justin Jefferson","MIN"],["CeeDee Lamb","DAL"],
+    ["Puka Nacua","LAR"],["Amon-Ra St. Brown","DET"],["Malik Nabers","NYG"],
+    ["Nico Collins","HOU"],["Brian Thomas Jr.","JAX"],["A.J. Brown","PHI"],
+    ["Drake London","ATL"],["Ladd McConkey","LAC"],["Tee Higgins","CIN"],
+    ["Tyreek Hill","MIA"],["Davante Adams","LAR"],["Terry McLaurin","WAS"],
+    ["Garrett Wilson","NYJ"],["Mike Evans","TB"],["Marvin Harrison Jr.","ARI"],
+    ["DK Metcalf","PIT"],["Rashee Rice","KC"],["DeVonta Smith","PHI"],
+    ["Jaxon Smith-Njigba","SEA"],["Zay Flowers","BAL"],["DJ Moore","CHI"],
+    ["Jaylen Waddle","MIA"],["Courtland Sutton","DEN"],["Calvin Ridley","TEN"],
+    ["Jameson Williams","DET"],["Chris Godwin","TB"],["Jerry Jeudy","CLE"],
+    ["Travis Hunter","JAX"],["Tetairoa McMillan","CAR"],["Xavier Worthy","KC"],
+    ["George Pickens","DAL"],["Rome Odunze","CHI"],["Chris Olave","NO"],
+    ["Stefon Diggs","NE"],["Cooper Kupp","SEA"],["Khalil Shakir","BUF"],
+    ["Ricky Pearsall","SF"]
+  ],
+  TE: [
+    ["Brock Bowers","LV"],["Trey McBride","ARI"],["George Kittle","SF"],
+    ["Sam LaPorta","DET"],["T.J. Hockenson","MIN"],["Travis Kelce","KC"],
+    ["Evan Engram","DEN"],["David Njoku","CLE"],["Mark Andrews","BAL"],
+    ["Dalton Kincaid","BUF"],["Tucker Kraft","GB"],["Jake Ferguson","DAL"],
+    ["Dallas Goedert","PHI"],["Colston Loveland","CHI"],["Tyler Warren","IND"],
+    ["Kyle Pitts","ATL"]
+  ]
+};
+
+var PPG_CURVE = { QB:[24,0.65], RB:[21,0.53], WR:[20,0.44], TE:[16,0.78] };
+var POS_ORDER = ["QB","RB","WR","TE"];
+
+var POOL = [];
+POS_ORDER.forEach(function(pos){
+  RAW[pos].forEach(function(entry, rank){
+    var curve = PPG_CURVE[pos];
+    var ppg = Math.round((curve[0] - curve[1] * Math.pow(rank, 0.9)) * 10) / 10;
+    var idx = POOL.length;
+    POOL.push({ idx: idx, pos: pos, rank: rank, name: entry[0], team: entry[1],
+                ppg: ppg, bye: 5 + ((idx * 7) % 10) });
+  });
+});
+var POOL_SIZE = POOL.length; // 116
+
+function playerAt(pos, rank){
+  for (var i = 0; i < POOL.length; i++)
+    if (POOL[i].pos === pos && POOL[i].rank === rank) return POOL[i];
+  return null;
+}
+
+/* =====================================================================
+   DRAFT CONFIG — 7 slots in draft order. Each slot draws its 10 spin
+   candidates from a band of position ranks; bands widen automatically
+   if the band can't supply 10 undrafted players (pool-expansion
+   fallback), so a spin can never come up short.
+   ===================================================================== */
+var SLOTS = [
+  { label:"QB",   accepts:["QB"],           bands:{ QB:[0,9]  } },
+  { label:"RB1",  accepts:["RB"],           bands:{ RB:[0,11] } },
+  { label:"RB2",  accepts:["RB"],           bands:{ RB:[8,23] } },
+  { label:"WR1",  accepts:["WR"],           bands:{ WR:[0,11] } },
+  { label:"WR2",  accepts:["WR"],           bands:{ WR:[8,23] } },
+  { label:"TE",   accepts:["TE"],           bands:{ TE:[0,9]  } },
+  { label:"FLEX", accepts:["RB","WR","TE"], bands:{ RB:[12,35], WR:[12,39], TE:[4,15] } }
+];
+
+var state = { roster: [], round: 0, weeks: null, wins: 0, name: "" };
+
+function shuffle(arr){
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function candidatesFor(slot){
+  var drafted = {};
+  state.roster.forEach(function(r){ drafted[r.player.idx] = true; });
+  var bands = {};
+  for (var pos in slot.bands) bands[pos] = slot.bands[pos].slice();
+
+  function available(){
+    var out = [];
+    for (var pos in bands){
+      var lo = bands[pos][0], hi = bands[pos][1];
+      POOL.forEach(function(p){
+        if (p.pos === pos && p.rank >= lo && p.rank <= hi && !drafted[p.idx]) out.push(p);
+      });
+    }
+    return out;
+  }
+
+  var list = available();
+  var guard = 0;
+  while (list.length < 10 && guard++ < 25){
+    var expanded = false;
+    for (var pos in bands){
+      var max = RAW[pos].length - 1;
+      var nlo = Math.max(0, bands[pos][0] - 4);
+      var nhi = Math.min(max, bands[pos][1] + 4);
+      if (nlo !== bands[pos][0] || nhi !== bands[pos][1]){
+        bands[pos] = [nlo, nhi];
+        expanded = true;
+      }
+    }
+    if (!expanded) break;
+    list = available();
+  }
+  return shuffle(list).slice(0, 10);
+}
+
+/* =====================================================================
+   SEASON SIMULATION — 17 weeks. Each player scores gaussian(ppg,
+   0.28*ppg) floored at 0, or 0 on their bye week. The opponent scores
+   gaussian around a league-average roster total. Win the week if you
+   outscore them. Tuned so a good draft wins ~60-70% of weeks and 17-0
+   stays genuinely rare.
+   ===================================================================== */
+function gauss(mean, sd){
+  var u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return mean + sd * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+var OPP_MEAN = (function(){
+  var ref = [playerAt("QB",9), playerAt("RB",9), playerAt("RB",17),
+             playerAt("WR",9), playerAt("WR",17), playerAt("TE",6), playerAt("WR",21)];
+  return ref.reduce(function(s,p){ return s + p.ppg; }, 0);
+})();
+var OPP_SD = 14;
+
+function simulateSeason(roster){
+  var weeks = [];
+  for (var w = 1; w <= 17; w++){
+    var team = 0;
+    roster.forEach(function(r){
+      if (r.player.bye === w) return;
+      team += Math.max(0, gauss(r.player.ppg, 0.28 * r.player.ppg));
+    });
+    var opp = Math.max(0, gauss(OPP_MEAN, OPP_SD));
+    weeks.push({ week: w, team: Math.round(team * 10) / 10,
+                 opp: Math.round(opp * 10) / 10, win: team > opp });
+  }
+  return weeks;
+}
+
+function taglineFor(wins){
+  if (wins === 17) return "PERFECT SEASON.";
+  if (wins >= 15) return "Dynasty material.";
+  if (wins >= 12) return "Playoff lock.";
+  if (wins >= 9)  return "Bubble team.";
+  if (wins >= 6)  return "Draft better.";
+  return "Burn the tape.";
+}
+
+/* =====================================================================
+   SHARE LINKS — the whole result packed into the URL, zero backend.
+   Payload: 4-bit version (=1) + 7 x 7-bit global pool index (in slot
+   order) + 17 x 1-bit win flags = 70 bits -> 9 bytes -> 12-char
+   base64url in ?s=. Optional display name rides along readable in &n=.
+   decodeShare() throws on anything malformed; the boot sequence catches
+   and falls back to the hero screen.
+   ===================================================================== */
+function encodeShare(roster, weeks){
+  var bits = [];
+  function push(val, n){ for (var i = n - 1; i >= 0; i--) bits.push((val >> i) & 1); }
+  push(1, 4);
+  roster.forEach(function(r){ push(r.player.idx, 7); });
+  weeks.forEach(function(w){ push(w.win ? 1 : 0, 1); });
+  while (bits.length % 8 !== 0) bits.push(0);
+  var bin = "";
+  for (var i = 0; i < bits.length; i += 8){
+    var b = 0;
+    for (var j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+    bin += String.fromCharCode(b);
+  }
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function decodeShare(str){
+  if (!/^[A-Za-z0-9_-]{12}$/.test(str)) throw new Error("bad format");
+  var bin = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+  if (bin.length !== 9) throw new Error("bad length");
+  var bits = [];
+  for (var i = 0; i < bin.length; i++){
+    var b = bin.charCodeAt(i);
+    for (var j = 7; j >= 0; j--) bits.push((b >> j) & 1);
+  }
+  var pos = 0;
+  function read(n){
+    var v = 0;
+    for (var k = 0; k < n; k++) v = (v << 1) | bits[pos++];
+    return v;
+  }
+  if (read(4) !== 1) throw new Error("bad version");
+  var seen = {}, roster = [];
+  for (var s = 0; s < 7; s++){
+    var idx = read(7);
+    if (idx >= POOL_SIZE) throw new Error("index out of range");
+    if (seen[idx]) throw new Error("duplicate player");
+    seen[idx] = true;
+    var player = POOL[idx];
+    if (SLOTS[s].accepts.indexOf(player.pos) === -1) throw new Error("wrong position for slot");
+    roster.push({ slot: SLOTS[s].label, player: player });
+  }
+  var wins = [];
+  for (var w = 0; w < 17; w++) wins.push(read(1) === 1);
+  if (read(2) !== 0) throw new Error("bad padding");
+  return { roster: roster, wins: wins };
+}
+
+function buildShareUrl(){
+  var base = location.href.replace(/[?#].*$/, "");
+  var url = base + "?s=" + encodeShare(state.roster, state.weeks);
+  if (state.name) url += "&n=" + encodeURIComponent(state.name);
+  return url;
+}
+
+/* =====================================================================
+   RENDERING & FLOW
+   ===================================================================== */
+function $(id){ return document.getElementById(id); }
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(function(el){
+    el.classList.toggle("active", el.id === id);
+  });
+  window.scrollTo(0, 0);
+}
+
+function renderRosterRows(container, roster, emptyThrough){
+  container.textContent = "";
+  SLOTS.forEach(function(slot, i){
+    var entry = roster[i];
+    var row = document.createElement("div");
+    row.className = "row";
+    var sl = document.createElement("span");
+    sl.className = "slot"; sl.textContent = slot.label;
+    var who = document.createElement("span");
+    var pts = document.createElement("span");
+    pts.className = "pts";
+    if (entry){
+      who.className = "who";
+      who.textContent = entry.player.name + " · " + entry.player.team;
+      pts.textContent = entry.player.ppg.toFixed(1) + " ppg · bye " + entry.player.bye;
+    } else {
+      who.className = "who empty";
+      who.textContent = (emptyThrough && i === state.round) ? "on the clock…" : "—";
+      pts.textContent = "";
+    }
+    row.appendChild(sl); row.appendChild(who); row.appendChild(pts);
+    container.appendChild(row);
+  });
+}
+
+function renderResultRoster(container, roster){
+  container.textContent = "";
+  roster.forEach(function(entry){
+    var row = document.createElement("div");
+    row.className = "row";
+    var sl = document.createElement("span");
+    sl.className = "slot"; sl.textContent = entry.slot;
+    var who = document.createElement("span");
+    who.className = "who";
+    who.textContent = entry.player.name + " ";
+    var team = document.createElement("span");
+    team.textContent = entry.player.team + " · bye " + entry.player.bye;
+    who.appendChild(team);
+    var pts = document.createElement("span");
+    pts.className = "pts";
+    pts.textContent = entry.player.ppg.toFixed(1);
+    row.appendChild(sl); row.appendChild(who); row.appendChild(pts);
+    container.appendChild(row);
+  });
+}
+
+function makeChip(win, title){
+  var chip = document.createElement("span");
+  chip.className = "chip " + (win ? "w" : "l");
+  chip.textContent = win ? "W" : "L";
+  if (title) chip.title = title;
+  return chip;
+}
+
+function setRecord(el, wins){
+  el.textContent = "";
+  el.appendChild(document.createTextNode(String(wins)));
+  var dash = document.createElement("span");
+  dash.className = "dash"; dash.textContent = "–";
+  el.appendChild(dash);
+  el.appendChild(document.createTextNode(String(17 - wins)));
+}
+
+/* ---------- draft flow ---------- */
+var spinTimer = null;
+
+function startDraft(){
+  state.roster = [];
+  state.round = 0;
+  state.weeks = null;
+  state.wins = 0;
+  renderDraftRound();
+  showScreen("screen-draft");
+}
+
+function renderDraftRound(){
+  var slot = SLOTS[state.round];
+  $("draft-slot").textContent = slot.label;
+  $("draft-round").textContent = "ROUND " + (state.round + 1) + " / 7";
+  var hints = [];
+  for (var pos in slot.bands){
+    hints.push(pos + (slot.bands[pos][0] + 1) + "–" + pos + (slot.bands[pos][1] + 1));
+  }
+  $("tier-hint").innerHTML = "Tier band: <b>" + hints.join(" / ") + "</b> — spin deals 10, you keep 1.";
+  var strip = $("spin-strip");
+  strip.className = "idle";
+  strip.textContent = "Ready to spin";
+  $("btn-spin").disabled = false;
+  $("btn-spin").classList.remove("hidden");
+  $("candidates").classList.add("hidden");
+  $("candidates").textContent = "";
+  renderRosterRows($("mini-roster"), state.roster, true);
+}
+
+function spin(){
+  var slot = SLOTS[state.round];
+  var picks = candidatesFor(slot);
+  $("btn-spin").disabled = true;
+  var strip = $("spin-strip");
+  strip.className = "";
+  var flashPool = shuffle(POOL.filter(function(p){ return slot.accepts.indexOf(p.pos) !== -1; }));
+  var f = 0;
+  spinTimer = setInterval(function(){
+    var p = flashPool[f++ % flashPool.length];
+    strip.textContent = p.name;
+  }, 65);
+  setTimeout(function(){
+    clearInterval(spinTimer);
+    spinTimer = null;
+    strip.textContent = "Pick one:";
+    strip.className = "idle";
+    $("btn-spin").classList.add("hidden");
+    var box = $("candidates");
+    box.textContent = "";
+    picks.forEach(function(p){
+      var card = document.createElement("button");
+      card.type = "button";
+      card.className = "cand";
+      var nm = document.createElement("div");
+      nm.className = "nm"; nm.textContent = p.name;
+      var meta = document.createElement("div");
+      meta.className = "meta";
+      meta.innerHTML = p.team + " " + p.pos + (p.rank + 1) +
+        " · <b>" + p.ppg.toFixed(1) + "</b> ppg · bye " + p.bye;
+      card.appendChild(nm); card.appendChild(meta);
+      card.addEventListener("click", function(){ pick(p); });
+      box.appendChild(card);
+    });
+    box.classList.remove("hidden");
+  }, 1150);
+}
+
+function pick(player){
+  state.roster.push({ slot: SLOTS[state.round].label, player: player });
+  state.round++;
+  if (state.round < 7){
+    renderDraftRound();
+  } else {
+    renderRosterRows($("review-roster"), state.roster, false);
+    showScreen("screen-review");
+  }
+}
+
+/* ---------- season + result ---------- */
+function runSeason(){
+  state.name = $("name-input").value.trim().slice(0, 20);
+  state.weeks = simulateSeason(state.roster);
+  state.wins = state.weeks.filter(function(w){ return w.win; }).length;
+
+  $("result-title").textContent = state.name
+    ? state.name + "’s Perfect Season" : "Your Perfect Season";
+  var ticker = $("result-ticker");
+  ticker.textContent = "";
+  var recordEl = $("result-record"), tagEl = $("result-tagline");
+  recordEl.classList.add("hidden");
+  tagEl.classList.add("hidden");
+  $("result-actions").classList.add("hidden");
+  renderResultRoster($("result-roster"), state.roster);
+  showScreen("screen-result");
+
+  state.weeks.forEach(function(w, i){
+    setTimeout(function(){
+      ticker.appendChild(makeChip(w.win, "Wk " + w.week + ": " + w.team + " – " + w.opp));
+    }, 130 * i);
+  });
+  setTimeout(function(){
+    setRecord(recordEl, state.wins);
+    tagEl.textContent = taglineFor(state.wins);
+    recordEl.classList.remove("hidden");
+    tagEl.classList.remove("hidden");
+    $("result-actions").classList.remove("hidden");
+  }, 130 * 17 + 250);
+}
+
+function recapText(){
+  var lines = [];
+  lines.push((state.name ? state.name + "'s" : "My") + " Perfect Season — 2026");
+  lines.push("Record: " + state.wins + "-" + (17 - state.wins) + " · " + taglineFor(state.wins));
+  lines.push(state.weeks.map(function(w){ return w.win ? "W" : "L"; }).join(" "));
+  lines.push("");
+  state.roster.forEach(function(r){
+    lines.push(r.slot + "  " + r.player.name + " (" + r.player.team + ") — " +
+               r.player.ppg.toFixed(1) + " ppg");
+  });
+  return lines.join("\n");
+}
+
+function copyToClipboard(text, btn, doneLabel){
+  var original = btn.textContent;
+  function done(){
+    btn.textContent = doneLabel;
+    setTimeout(function(){ btn.textContent = original; }, 1600);
+  }
+  function legacy(){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); done(); } catch(e){ /* nothing left to try */ }
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, legacy);
+  } else {
+    legacy();
+  }
+}
+
+/* ---------- shared (read-only) view ---------- */
+function renderShared(data, name){
+  var clean = (name || "").trim().slice(0, 20);
+  $("shared-title").textContent = (clean || "Someone") + "’s Perfect Season";
+  var wins = data.wins.filter(Boolean).length;
+  setRecord($("shared-record"), wins);
+  $("shared-tagline").textContent = taglineFor(wins);
+  var ticker = $("shared-ticker");
+  ticker.textContent = "";
+  data.wins.forEach(function(win, i){ ticker.appendChild(makeChip(win, "Week " + (i + 1))); });
+  renderResultRoster($("shared-roster"), data.roster);
+  showScreen("screen-shared");
+}
+
+/* ---------- wire up ---------- */
+$("btn-start").addEventListener("click", startDraft);
+$("btn-spin").addEventListener("click", spin);
+$("btn-redraft").addEventListener("click", startDraft);
+$("btn-simulate").addEventListener("click", runSeason);
+$("btn-again").addEventListener("click", function(){
+  $("name-input").value = "";
+  state.name = "";
+  startDraft();
+});
+$("btn-copy-recap").addEventListener("click", function(){
+  copyToClipboard(recapText(), $("btn-copy-recap"), "Recap Copied!");
+});
+$("btn-copy-link").addEventListener("click", function(){
+  copyToClipboard(buildShareUrl(), $("btn-copy-link"), "Link Copied!");
+});
+$("btn-draft-own").addEventListener("click", function(){
+  history.replaceState(null, "", location.pathname);
+  startDraft();
+});
+
+/* ---------- boot: shared link first, hero otherwise ---------- */
+(function boot(){
+  var params = new URLSearchParams(location.search);
+  var s = params.get("s");
+  if (s){
+    try {
+      renderShared(decodeShare(s), params.get("n") || "");
+      return;
+    } catch (e){
+      history.replaceState(null, "", location.pathname);
+    }
+  }
+  showScreen("screen-hero");
+})();
+</script>
+</body>
+</html>
