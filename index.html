@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Perfect Season</title>
-<meta name="description" content="Draft a 7-man 2026 fantasy roster with tier spins, simulate a 17-week season, and share your record with a link.">
+<meta name="description" content="Draft an 8-man 2026 PPR roster with tier spins, simulate a 17-week season, and share your record with a link.">
 <meta property="og:title" content="Perfect Season">
-<meta property="og:description" content="Spin the tiers, draft 7 players, survive 17 weeks. Can you go 17-0?">
+<meta property="og:description" content="Spin the tiers, draft 8 players, survive 17 weeks. Can you go 17-0?">
 <meta name="theme-color" content="#0e1216">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%88%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -97,7 +97,7 @@
   /* ---------- draft ---------- */
   .draft-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
   .draft-head h2{font-size:26px}
-  .draft-head .round{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber);letter-spacing:.14em}
+  .draft-head .pickinfo{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber);letter-spacing:.14em;text-transform:uppercase}
   #tier-hint{font-size:13px;color:var(--muted);margin-bottom:16px}
   #tier-hint b{color:var(--amber);font-weight:600}
 
@@ -133,7 +133,7 @@
     padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;
   }
   .mini-roster .row:last-child{border-bottom:0}
-  .mini-roster .slot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);width:44px;flex:none}
+  .mini-roster .slot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);width:46px;flex:none}
   .mini-roster .who{flex:1;font-weight:600}
   .mini-roster .who.empty{color:var(--muted);font-weight:400}
   .mini-roster .pts{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
@@ -154,12 +154,17 @@
     background:var(--panel);border:1px solid var(--line);border-radius:16px;
     padding:24px 20px;text-align:center;
   }
-  .record{font-size:clamp(64px,20vw,92px);line-height:1;color:var(--text)}
+  .record{font-size:clamp(60px,19vw,88px);line-height:1;color:var(--text)}
   .record .dash{color:var(--amber)}
-  .tagline{
-    font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--amber);margin:10px 0 20px;
+  .tier{
+    display:inline-block;margin:14px 0 6px;padding:7px 16px;border-radius:999px;
+    border:1px solid var(--amber);color:var(--amber);
+    font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;
   }
+  .tier.taco{border-color:var(--rust);color:var(--rust)}
+  .tier.champ{background:var(--amber);color:#141005}
+  .subline{font-size:12.5px;color:var(--muted);margin-bottom:20px}
   .ticker{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:22px}
   .chip{
     width:30px;height:30px;border-radius:7px;flex:none;
@@ -176,16 +181,10 @@
     padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;
   }
   .roster-list .row:last-child{border-bottom:0}
-  .roster-list .slot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);width:42px;flex:none}
+  .roster-list .slot{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);width:46px;flex:none}
   .roster-list .who{flex:1;font-weight:600}
   .roster-list .who span{color:var(--muted);font-weight:400;font-size:12px}
   .roster-list .pts{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);flex:none}
-
-  footer{
-    text-align:center;margin-top:34px;
-    font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--muted);opacity:.7;
-  }
 </style>
 </head>
 <body>
@@ -195,12 +194,12 @@
   <!-- ============ HERO ============ -->
   <section class="screen" id="screen-hero">
     <h1>Chase<br>The <span>17&#8211;0</span></h1>
-    <p class="pitch">Draft a 7-man 2026 roster off pure tier luck, then survive a 17-week season. Most teams don't. Will yours?</p>
+    <p class="pitch">Draft an 8-man PPR roster off pure tier luck, then survive a 17-week season in a 12-team league. Most teams don&rsquo;t. Will yours?</p>
     <ul class="rules">
-      <li><span class="n">01</span><b>Spin the tier.</b> Each round deals you 10 players.</li>
-      <li><span class="n">02</span><b>Pick one.</b> Seven rounds, seven roster spots.</li>
-      <li><span class="n">03</span><b>Simulate.</b> 17 weeks, real variance, no mercy.</li>
-      <li><span class="n">04</span><b>Share it.</b> One link, no login, receipts included.</li>
+      <li><span class="n">01</span><b>Spin the tier.</b> Each round deals you 10 players off live ADP.</li>
+      <li><span class="n">02</span><b>Pick one.</b> Eight rounds, eight roster spots, two flex.</li>
+      <li><span class="n">03</span><b>Simulate.</b> 17 weeks, PPR scoring, real variance, no mercy.</li>
+      <li><span class="n">04</span><b>Get judged.</b> Championship Threat&hellip; or Taco.</li>
     </ul>
     <button class="btn btn-primary" id="btn-start">Start Your Draft</button>
   </section>
@@ -208,8 +207,8 @@
   <!-- ============ DRAFT ============ -->
   <section class="screen" id="screen-draft">
     <div class="draft-head">
-      <h2 id="draft-slot">QB</h2>
-      <div class="round" id="draft-round">ROUND 1 / 7</div>
+      <h2 id="draft-round">Round 1</h2>
+      <div class="pickinfo" id="draft-slot">QB &middot; Pick 1/8</div>
     </div>
     <p id="tier-hint"></p>
     <div id="spin-zone">
@@ -242,7 +241,8 @@
     <div class="kicker" id="result-title">Your Perfect Season</div>
     <div class="result-card">
       <div class="record" id="result-record"></div>
-      <div class="tagline" id="result-tagline"></div>
+      <div><span class="tier" id="result-tier"></span></div>
+      <div class="subline" id="result-subline"></div>
       <div class="ticker" id="result-ticker"></div>
       <div class="roster-list" id="result-roster"></div>
     </div>
@@ -258,7 +258,8 @@
     <div class="kicker" id="shared-title">Someone&rsquo;s Perfect Season</div>
     <div class="result-card">
       <div class="record" id="shared-record"></div>
-      <div class="tagline" id="shared-tagline"></div>
+      <div><span class="tier" id="shared-tier"></span></div>
+      <div class="subline" id="shared-subline"></div>
       <div class="ticker" id="shared-ticker"></div>
       <div class="roster-list" id="shared-roster"></div>
     </div>
@@ -266,72 +267,73 @@
       <button class="btn btn-primary" id="btn-draft-own">Draft Your Own Season</button>
     </div>
   </section>
-
-  <footer>Perfect Season &middot; 2026 &middot; no logins, just links</footer>
 </main>
 
 <script>
 "use strict";
 
 /* =====================================================================
-   PLAYER POOL — 116 players: 24 QB, 36 RB, 40 WR, 16 TE.
-   Order within each position IS the position rank; global index is what
-   share links encode. PPG comes from a per-position decay curve; bye
-   weeks are invented (the real 2026 schedule isn't out) purely for
-   in-game texture.
+   PLAYER POOL — 116 players: 24 QB, 36 RB, 40 WR, 16 TE, ordered by
+   August 2026 12-team PPR ADP consensus (positional order calibrated
+   against live rankings: Gibbs 1.01, Puka/Chase/JSN atop WR,
+   Bowers/McBride then the sophomore class at TE, etc.). Order within
+   each position IS the position rank; global index is what share links
+   encode. PPG comes from a per-position PPR decay curve; bye weeks are
+   invented purely for in-game texture.
    ===================================================================== */
 var RAW = {
   QB: [
     ["Josh Allen","BUF"],["Lamar Jackson","BAL"],["Jayden Daniels","WAS"],
-    ["Jalen Hurts","PHI"],["Joe Burrow","CIN"],["Patrick Mahomes","KC"],
-    ["Baker Mayfield","TB"],["Justin Herbert","LAC"],["Kyler Murray","ARI"],
-    ["C.J. Stroud","HOU"],["Jordan Love","GB"],["Brock Purdy","SF"],
-    ["Caleb Williams","CHI"],["Dak Prescott","DAL"],["Bo Nix","DEN"],
-    ["Jared Goff","DET"],["Tua Tagovailoa","MIA"],["Trevor Lawrence","JAX"],
-    ["Justin Fields","NYJ"],["Drake Maye","NE"],["J.J. McCarthy","MIN"],
-    ["Bryce Young","CAR"],["Geno Smith","LV"],["Michael Penix Jr.","ATL"]
+    ["Jalen Hurts","PHI"],["Joe Burrow","CIN"],["Drake Maye","NE"],
+    ["Patrick Mahomes","KC"],["Baker Mayfield","TB"],["Justin Herbert","LAC"],
+    ["Bo Nix","DEN"],["Caleb Williams","CHI"],["Jordan Love","GB"],
+    ["Kyler Murray","ARI"],["Brock Purdy","SF"],["C.J. Stroud","HOU"],
+    ["Jared Goff","DET"],["Dak Prescott","DAL"],["Justin Fields","NYJ"],
+    ["J.J. McCarthy","MIN"],["Tua Tagovailoa","MIA"],["Trevor Lawrence","JAX"],
+    ["Michael Penix Jr.","ATL"],["Bryce Young","CAR"],["Geno Smith","LV"]
   ],
   RB: [
-    ["Bijan Robinson","ATL"],["Saquon Barkley","PHI"],["Jahmyr Gibbs","DET"],
-    ["Christian McCaffrey","SF"],["Ashton Jeanty","LV"],["De'Von Achane","MIA"],
-    ["Derrick Henry","BAL"],["Josh Jacobs","GB"],["Kyren Williams","LAR"],
-    ["Jonathan Taylor","IND"],["Chase Brown","CIN"],["James Cook","BUF"],
-    ["Bucky Irving","TB"],["Kenneth Walker III","SEA"],["Chuba Hubbard","CAR"],
-    ["James Conner","ARI"],["Omarion Hampton","LAC"],["Breece Hall","NYJ"],
-    ["Alvin Kamara","NO"],["David Montgomery","DET"],["Aaron Jones","MIN"],
-    ["Joe Mixon","HOU"],["Quinshon Judkins","CLE"],["RJ Harvey","DEN"],
-    ["TreVeyon Henderson","NE"],["Kaleb Johnson","PIT"],["D'Andre Swift","CHI"],
-    ["Tony Pollard","TEN"],["Isiah Pacheco","KC"],["Javonte Williams","DAL"],
-    ["Zach Charbonnet","SEA"],["Brian Robinson Jr.","WAS"],["Tyrone Tracy Jr.","NYG"],
-    ["Jaylen Warren","PIT"],["Rachaad White","TB"],["Najee Harris","LAC"]
+    ["Jahmyr Gibbs","DET"],["Bijan Robinson","ATL"],["Christian McCaffrey","SF"],
+    ["Saquon Barkley","PHI"],["Ashton Jeanty","LV"],["De'Von Achane","MIA"],
+    ["Omarion Hampton","LAC"],["Derrick Henry","BAL"],["Jonathan Taylor","IND"],
+    ["Josh Jacobs","GB"],["Kyren Williams","LAR"],["Chase Brown","CIN"],
+    ["Bucky Irving","TB"],["James Cook","BUF"],["Kenneth Walker III","SEA"],
+    ["Breece Hall","NYJ"],["Quinshon Judkins","CLE"],["TreVeyon Henderson","NE"],
+    ["Chuba Hubbard","CAR"],["James Conner","ARI"],["RJ Harvey","DEN"],
+    ["Alvin Kamara","NO"],["Kaleb Johnson","PIT"],["Joe Mixon","HOU"],
+    ["Aaron Jones","MIN"],["D'Andre Swift","CHI"],["Tony Pollard","TEN"],
+    ["Isiah Pacheco","KC"],["Trey Benson","ARI"],["Javonte Williams","DAL"],
+    ["Jaylen Warren","PIT"],["Zach Charbonnet","SEA"],["Tyrone Tracy Jr.","NYG"],
+    ["Brian Robinson Jr.","WAS"],["Rachaad White","TB"],["Najee Harris","LAC"]
   ],
   WR: [
-    ["Ja'Marr Chase","CIN"],["Justin Jefferson","MIN"],["CeeDee Lamb","DAL"],
-    ["Puka Nacua","LAR"],["Amon-Ra St. Brown","DET"],["Malik Nabers","NYG"],
-    ["Nico Collins","HOU"],["Brian Thomas Jr.","JAX"],["A.J. Brown","PHI"],
-    ["Drake London","ATL"],["Ladd McConkey","LAC"],["Tee Higgins","CIN"],
-    ["Tyreek Hill","MIA"],["Davante Adams","LAR"],["Terry McLaurin","WAS"],
-    ["Garrett Wilson","NYJ"],["Mike Evans","TB"],["Marvin Harrison Jr.","ARI"],
-    ["DK Metcalf","PIT"],["Rashee Rice","KC"],["DeVonta Smith","PHI"],
-    ["Jaxon Smith-Njigba","SEA"],["Zay Flowers","BAL"],["DJ Moore","CHI"],
-    ["Jaylen Waddle","MIA"],["Courtland Sutton","DEN"],["Calvin Ridley","TEN"],
-    ["Jameson Williams","DET"],["Chris Godwin","TB"],["Jerry Jeudy","CLE"],
-    ["Travis Hunter","JAX"],["Tetairoa McMillan","CAR"],["Xavier Worthy","KC"],
-    ["George Pickens","DAL"],["Rome Odunze","CHI"],["Chris Olave","NO"],
-    ["Stefon Diggs","NE"],["Cooper Kupp","SEA"],["Khalil Shakir","BUF"],
+    ["Puka Nacua","LAR"],["Ja'Marr Chase","CIN"],["Jaxon Smith-Njigba","SEA"],
+    ["Justin Jefferson","MIN"],["CeeDee Lamb","DAL"],["Malik Nabers","NYG"],
+    ["Amon-Ra St. Brown","DET"],["Nico Collins","HOU"],["Brian Thomas Jr.","JAX"],
+    ["A.J. Brown","PHI"],["Drake London","ATL"],["Ladd McConkey","LAC"],
+    ["Marvin Harrison Jr.","ARI"],["Tee Higgins","CIN"],["Garrett Wilson","NYJ"],
+    ["Terry McLaurin","WAS"],["Rashee Rice","KC"],["Davante Adams","LAR"],
+    ["Tyreek Hill","MIA"],["DK Metcalf","PIT"],["DeVonta Smith","PHI"],
+    ["Zay Flowers","BAL"],["Luther Burden III","CHI"],["DJ Moore","CHI"],
+    ["Jaylen Waddle","MIA"],["Mike Evans","TB"],["Travis Hunter","JAX"],
+    ["Tetairoa McMillan","CAR"],["Emeka Egbuka","TB"],["Courtland Sutton","DEN"],
+    ["Xavier Worthy","KC"],["Jameson Williams","DET"],["George Pickens","DAL"],
+    ["Rome Odunze","CHI"],["Matthew Golden","GB"],["Chris Olave","NO"],
+    ["Calvin Ridley","TEN"],["Jordan Addison","MIN"],["Khalil Shakir","BUF"],
     ["Ricky Pearsall","SF"]
   ],
   TE: [
-    ["Brock Bowers","LV"],["Trey McBride","ARI"],["George Kittle","SF"],
-    ["Sam LaPorta","DET"],["T.J. Hockenson","MIN"],["Travis Kelce","KC"],
-    ["Evan Engram","DEN"],["David Njoku","CLE"],["Mark Andrews","BAL"],
-    ["Dalton Kincaid","BUF"],["Tucker Kraft","GB"],["Jake Ferguson","DAL"],
-    ["Dallas Goedert","PHI"],["Colston Loveland","CHI"],["Tyler Warren","IND"],
-    ["Kyle Pitts","ATL"]
+    ["Brock Bowers","LV"],["Trey McBride","ARI"],["Colston Loveland","CHI"],
+    ["Tyler Warren","IND"],["Tucker Kraft","GB"],["George Kittle","SF"],
+    ["Sam LaPorta","DET"],["T.J. Hockenson","MIN"],["David Njoku","CLE"],
+    ["Evan Engram","DEN"],["Mark Andrews","BAL"],["Dalton Kincaid","BUF"],
+    ["Jake Ferguson","DAL"],["Dallas Goedert","PHI"],["Kyle Pitts","ATL"],
+    ["Hunter Henry","NE"]
   ]
 };
 
-var PPG_CURVE = { QB:[24,0.65], RB:[21,0.53], WR:[20,0.44], TE:[16,0.78] };
+/* PPR points-per-game curves: [base for rank 1, decay]. */
+var PPG_CURVE = { QB:[24,0.65], RB:[23,0.55], WR:[22,0.48], TE:[18,0.85] };
 var POS_ORDER = ["QB","RB","WR","TE"];
 
 var POOL = [];
@@ -353,10 +355,10 @@ function playerAt(pos, rank){
 }
 
 /* =====================================================================
-   DRAFT CONFIG — 7 slots in draft order. Each slot draws its 10 spin
-   candidates from a band of position ranks; bands widen automatically
-   if the band can't supply 10 undrafted players (pool-expansion
-   fallback), so a spin can never come up short.
+   DRAFT CONFIG — 8 slots in draft order (two flex). Each round draws
+   its 10 spin candidates from a band of position ranks; bands widen
+   automatically if they can't supply 10 undrafted players
+   (pool-expansion fallback), so a spin can never come up short.
    ===================================================================== */
 var SLOTS = [
   { label:"QB",   accepts:["QB"],           bands:{ QB:[0,9]  } },
@@ -365,8 +367,10 @@ var SLOTS = [
   { label:"WR1",  accepts:["WR"],           bands:{ WR:[0,11] } },
   { label:"WR2",  accepts:["WR"],           bands:{ WR:[8,23] } },
   { label:"TE",   accepts:["TE"],           bands:{ TE:[0,9]  } },
-  { label:"FLEX", accepts:["RB","WR","TE"], bands:{ RB:[12,35], WR:[12,39], TE:[4,15] } }
+  { label:"FLEX1",accepts:["RB","WR","TE"], bands:{ RB:[10,29], WR:[10,31], TE:[3,11] } },
+  { label:"FLEX2",accepts:["RB","WR","TE"], bands:{ RB:[16,35], WR:[16,39], TE:[6,15] } }
 ];
+var ROSTER_SIZE = SLOTS.length; // 8
 
 var state = { roster: [], round: 0, weeks: null, wins: 0, name: "" };
 
@@ -416,11 +420,11 @@ function candidatesFor(slot){
 }
 
 /* =====================================================================
-   SEASON SIMULATION — 17 weeks. Each player scores gaussian(ppg,
-   0.28*ppg) floored at 0, or 0 on their bye week. The opponent scores
-   gaussian around a league-average roster total. Win the week if you
-   outscore them. Tuned so a good draft wins ~60-70% of weeks and 17-0
-   stays genuinely rare.
+   SEASON SIMULATION — 17 weeks in a 12-team PPR league. Each player
+   scores gaussian(ppg, 0.28*ppg) floored at 0, or 0 on their bye week.
+   The opponent scores a gaussian around the league-average starting
+   eight. Win the week if you outscore them. Tuned so a good draft wins
+   ~60-70% of weeks and 17-0 stays genuinely rare.
    ===================================================================== */
 function gauss(mean, sd){
   var u = 0, v = 0;
@@ -430,11 +434,12 @@ function gauss(mean, sd){
 }
 
 var OPP_MEAN = (function(){
-  var ref = [playerAt("QB",9), playerAt("RB",9), playerAt("RB",17),
-             playerAt("WR",9), playerAt("WR",17), playerAt("TE",6), playerAt("WR",21)];
+  var ref = [playerAt("QB",10), playerAt("RB",10), playerAt("RB",18),
+             playerAt("WR",10), playerAt("WR",18), playerAt("TE",6),
+             playerAt("WR",22), playerAt("RB",22)];
   return ref.reduce(function(s,p){ return s + p.ppg; }, 0);
 })();
-var OPP_SD = 14;
+var OPP_SD = 15;
 
 function simulateSeason(roster){
   var weeks = [];
@@ -451,27 +456,30 @@ function simulateSeason(roster){
   return weeks;
 }
 
-function taglineFor(wins){
-  if (wins === 17) return "PERFECT SEASON.";
-  if (wins >= 15) return "Dynasty material.";
-  if (wins >= 12) return "Playoff lock.";
-  if (wins >= 9)  return "Bubble team.";
-  if (wins >= 6)  return "Draft better.";
-  return "Burn the tape.";
+/* Team tier — how the 12-team league sees you. Taco is from The League. */
+function tierFor(wins){
+  if (wins === 17) return { name:"PERFECT SEASON", sub:"17–0. Immortal. Retire the trophy.", cls:"champ" };
+  if (wins >= 15)  return { name:"Championship Threat", sub:"The league group chat fears you.", cls:"champ" };
+  if (wins >= 12)  return { name:"Contender", sub:"Playoff lock in a 12-team league.", cls:"" };
+  if (wins >= 9)   return { name:"Pretender", sub:"Hot start. Quiet finish. We saw it.", cls:"" };
+  if (wins >= 5)   return { name:"Basement Dweller", sub:"Consolation bracket incoming.", cls:"taco" };
+  return { name:"Taco", sub:"Bottom of the league. Wear it.", cls:"taco" };
 }
 
 /* =====================================================================
    SHARE LINKS — the whole result packed into the URL, zero backend.
-   Payload: 4-bit version (=1) + 7 x 7-bit global pool index (in slot
-   order) + 17 x 1-bit win flags = 70 bits -> 9 bytes -> 12-char
+   Payload: 4-bit version (=2) + 8 x 7-bit global pool index (in slot
+   order) + 17 x 1-bit win flags = 77 bits -> 10 bytes -> 14-char
    base64url in ?s=. Optional display name rides along readable in &n=.
    decodeShare() throws on anything malformed; the boot sequence catches
    and falls back to the hero screen.
    ===================================================================== */
+var SHARE_VERSION = 2;
+
 function encodeShare(roster, weeks){
   var bits = [];
   function push(val, n){ for (var i = n - 1; i >= 0; i--) bits.push((val >> i) & 1); }
-  push(1, 4);
+  push(SHARE_VERSION, 4);
   roster.forEach(function(r){ push(r.player.idx, 7); });
   weeks.forEach(function(w){ push(w.win ? 1 : 0, 1); });
   while (bits.length % 8 !== 0) bits.push(0);
@@ -485,9 +493,11 @@ function encodeShare(roster, weeks){
 }
 
 function decodeShare(str){
-  if (!/^[A-Za-z0-9_-]{12}$/.test(str)) throw new Error("bad format");
-  var bin = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
-  if (bin.length !== 9) throw new Error("bad length");
+  if (!/^[A-Za-z0-9_-]{14}$/.test(str)) throw new Error("bad format");
+  var b64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  while (b64.length % 4 !== 0) b64 += "=";
+  var bin = atob(b64);
+  if (bin.length !== 10) throw new Error("bad length");
   var bits = [];
   for (var i = 0; i < bin.length; i++){
     var b = bin.charCodeAt(i);
@@ -499,9 +509,9 @@ function decodeShare(str){
     for (var k = 0; k < n; k++) v = (v << 1) | bits[pos++];
     return v;
   }
-  if (read(4) !== 1) throw new Error("bad version");
+  if (read(4) !== SHARE_VERSION) throw new Error("bad version");
   var seen = {}, roster = [];
-  for (var s = 0; s < 7; s++){
+  for (var s = 0; s < ROSTER_SIZE; s++){
     var idx = read(7);
     if (idx >= POOL_SIZE) throw new Error("index out of range");
     if (seen[idx]) throw new Error("duplicate player");
@@ -512,7 +522,7 @@ function decodeShare(str){
   }
   var wins = [];
   for (var w = 0; w < 17; w++) wins.push(read(1) === 1);
-  if (read(2) !== 0) throw new Error("bad padding");
+  if (read(3) !== 0) throw new Error("bad padding");
   return { roster: roster, wins: wins };
 }
 
@@ -598,6 +608,13 @@ function setRecord(el, wins){
   el.appendChild(document.createTextNode(String(17 - wins)));
 }
 
+function setTier(tierEl, sublineEl, wins){
+  var tier = tierFor(wins);
+  tierEl.className = "tier" + (tier.cls ? " " + tier.cls : "");
+  tierEl.textContent = tier.name;
+  sublineEl.textContent = tier.sub;
+}
+
 /* ---------- draft flow ---------- */
 var spinTimer = null;
 
@@ -612,13 +629,14 @@ function startDraft(){
 
 function renderDraftRound(){
   var slot = SLOTS[state.round];
-  $("draft-slot").textContent = slot.label;
-  $("draft-round").textContent = "ROUND " + (state.round + 1) + " / 7";
+  $("draft-round").textContent = "Round " + (state.round + 1);
+  $("draft-slot").textContent = slot.label.replace(/\d$/, "") +
+    " · Pick " + (state.round + 1) + "/" + ROSTER_SIZE;
   var hints = [];
   for (var pos in slot.bands){
     hints.push(pos + (slot.bands[pos][0] + 1) + "–" + pos + (slot.bands[pos][1] + 1));
   }
-  $("tier-hint").innerHTML = "Tier band: <b>" + hints.join(" / ") + "</b> — spin deals 10, you keep 1.";
+  $("tier-hint").innerHTML = "ADP tier band: <b>" + hints.join(" / ") + "</b> — spin deals 10, you keep 1.";
   var strip = $("spin-strip");
   strip.className = "idle";
   strip.textContent = "Ready to spin";
@@ -670,7 +688,7 @@ function spin(){
 function pick(player){
   state.roster.push({ slot: SLOTS[state.round].label, player: player });
   state.round++;
-  if (state.round < 7){
+  if (state.round < ROSTER_SIZE){
     renderDraftRound();
   } else {
     renderRosterRows($("review-roster"), state.roster, false);
@@ -688,9 +706,11 @@ function runSeason(){
     ? state.name + "’s Perfect Season" : "Your Perfect Season";
   var ticker = $("result-ticker");
   ticker.textContent = "";
-  var recordEl = $("result-record"), tagEl = $("result-tagline");
+  var recordEl = $("result-record");
+  var tierEl = $("result-tier"), subEl = $("result-subline");
   recordEl.classList.add("hidden");
-  tagEl.classList.add("hidden");
+  tierEl.classList.add("hidden");
+  subEl.classList.add("hidden");
   $("result-actions").classList.add("hidden");
   renderResultRoster($("result-roster"), state.roster);
   showScreen("screen-result");
@@ -702,17 +722,19 @@ function runSeason(){
   });
   setTimeout(function(){
     setRecord(recordEl, state.wins);
-    tagEl.textContent = taglineFor(state.wins);
+    setTier(tierEl, subEl, state.wins);
     recordEl.classList.remove("hidden");
-    tagEl.classList.remove("hidden");
+    tierEl.classList.remove("hidden");
+    subEl.classList.remove("hidden");
     $("result-actions").classList.remove("hidden");
   }, 130 * 17 + 250);
 }
 
 function recapText(){
+  var tier = tierFor(state.wins);
   var lines = [];
   lines.push((state.name ? state.name + "'s" : "My") + " Perfect Season — 2026");
-  lines.push("Record: " + state.wins + "-" + (17 - state.wins) + " · " + taglineFor(state.wins));
+  lines.push("Record: " + state.wins + "-" + (17 - state.wins) + " · " + tier.name);
   lines.push(state.weeks.map(function(w){ return w.win ? "W" : "L"; }).join(" "));
   lines.push("");
   state.roster.forEach(function(r){
@@ -750,7 +772,7 @@ function renderShared(data, name){
   $("shared-title").textContent = (clean || "Someone") + "’s Perfect Season";
   var wins = data.wins.filter(Boolean).length;
   setRecord($("shared-record"), wins);
-  $("shared-tagline").textContent = taglineFor(wins);
+  setTier($("shared-tier"), $("shared-subline"), wins);
   var ticker = $("shared-ticker");
   ticker.textContent = "";
   data.wins.forEach(function(win, i){ ticker.appendChild(makeChip(win, "Week " + (i + 1))); });
