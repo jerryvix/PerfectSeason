@@ -2,8 +2,11 @@
 // Refresh the Perfect Season player pool from FantasyPros PPR consensus rankings.
 //
 //   node update-adp.mjs                      fetch the latest rankings and rewrite index.html
-//   node update-adp.mjs --file ecr.csv       use a previously saved copy of the same CSV
 //   node update-adp.mjs --check              report what would change without writing anything
+//   node update-adp.mjs --file ecr.csv       use a previously saved copy of the rankings CSV
+//   node update-adp.mjs --source espn        use ESPN's own average draft position instead
+//   node update-adp.mjs --espn-players p.json --espn-schedule s.json
+//                                            use saved copies of the two ESPN responses
 //
 // Requires Node 18 or newer for the built-in fetch, and has no dependencies.
 //
@@ -24,6 +27,52 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const SOURCE =
   "https://raw.githubusercontent.com/dynastyprocess/data/master/files/db_fpecr_latest.csv";
+
+// ESPN publishes its own average draft position, which is the literal order
+// players came off the board in ESPN drafts rather than an analyst consensus.
+// It is the better number if you can reach it, but ESPN blocks a lot of
+// networks, so it sits behind --source espn instead of being the default.
+const ESPN_SEASON = 2026;
+const ESPN_BASE =
+  `https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/${ESPN_SEASON}/segments/0/leaguedefaults/3`;
+const ESPN_POS = { 1: "QB", 2: "RB", 3: "WR", 4: "TE" };
+const ESPN_TEAM = {
+  1:"ATL", 2:"BUF", 3:"CHI", 4:"CIN", 5:"CLE", 6:"DAL", 7:"DEN", 8:"DET",
+  9:"GB", 10:"TEN", 11:"IND", 12:"KC", 13:"LV", 14:"LAR", 15:"MIA", 16:"MIN",
+  17:"NE", 18:"NO", 19:"NYG", 20:"NYJ", 21:"PHI", 22:"ARI", 23:"PIT", 24:"LAC",
+  25:"SF", 26:"SEA", 27:"TB", 28:"WAS", 29:"CAR", 30:"JAX", 33:"BAL", 34:"HOU",
+};
+
+// Turn ESPN's player payload and team schedule into the same shape the
+// FantasyPros rows arrive in, so the selection logic below does not care
+// which source the numbers came from.
+export function normalizeEspn(playerPayload, schedulePayload) {
+  const byes = {};
+  for (const team of schedulePayload?.settings?.proTeams ?? []) {
+    if (team.abbrev && team.byeWeek >= 1 && team.byeWeek <= 18) {
+      byes[team.abbrev.toUpperCase()] = team.byeWeek;
+    }
+  }
+  const rows = [];
+  for (const entry of playerPayload?.players ?? playerPayload ?? []) {
+    const p = entry.player ?? entry;
+    const pos = ESPN_POS[p.defaultPositionId];
+    const team = ESPN_TEAM[p.proTeamId];
+    const adp = p.ownership?.averageDraftPosition;
+    if (!pos || !team || !p.fullName) continue;
+    if (!(adp > 0) || adp >= 500) continue; // ESPN parks undrafted players at a sentinel value
+    rows.push({
+      page_type: "redraft-overall",
+      player: p.fullName,
+      pos,
+      tm: team,
+      bye: String(byes[team] ?? ""),
+      ecr: String(adp),
+      scrape_date: new Date().toISOString().slice(0, 10),
+    });
+  }
+  return rows;
+}
 const QUOTAS = { QB: 24, RB: 36, WR: 40, TE: 16 };
 const POOL_SIZE = Object.values(QUOTAS).reduce((a, b) => a + b, 0);
 
@@ -69,7 +118,36 @@ function parseCsv(text) {
   return rows.map((r) => Object.fromEntries(header.map((h, i) => [h, r[i] ?? ""])));
 }
 
+async function fetchJson(url, headers) {
+  const res = await fetch(url, { headers });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} from ${url}`);
+  return res.json();
+}
+
+async function loadEspn() {
+  const savedPlayers = argValue("--espn-players");
+  const savedSchedule = argValue("--espn-schedule");
+  if (savedPlayers) {
+    return normalizeEspn(
+      JSON.parse(readFileSync(savedPlayers, "utf8")),
+      savedSchedule ? JSON.parse(readFileSync(savedSchedule, "utf8")) : {}
+    );
+  }
+  const filter = JSON.stringify({
+    players: { limit: 500, sortDraftRanks: { sortPriority: 100, sortAsc: true, value: "PPR" } },
+  });
+  const players = await fetchJson(`${ESPN_BASE}?view=kona_player_info`, {
+    "X-Fantasy-Filter": filter,
+    Accept: "application/json",
+  });
+  const schedule = await fetchJson(`${ESPN_BASE}?view=proTeamSchedules_wl`, {
+    Accept: "application/json",
+  });
+  return normalizeEspn(players, schedule);
+}
+
 async function loadRankings() {
+  if (argValue("--source") === "espn" || argValue("--espn-players")) return loadEspn();
   const file = argValue("--file");
   if (file) return parseCsv(readFileSync(file, "utf8"));
   const res = await fetch(SOURCE);
@@ -115,7 +193,7 @@ function selectPool(rows) {
   return pool;
 }
 
-function renderBlock(pool, scrapeDate) {
+function renderBlock(pool, scrapeDate, sourceLabel) {
   const lines = [];
   for (let i = 0; i < pool.length; i += 2) {
     const pair = pool.slice(i, i + 2).map((p) => {
@@ -125,7 +203,7 @@ function renderBlock(pool, scrapeDate) {
     lines.push("  " + pair.join(","));
   }
   return (
-    `/* ADP:BEGIN FantasyPros PPR consensus, scraped ${scrapeDate} */\n` +
+    `/* ADP:BEGIN ${sourceLabel}, scraped ${scrapeDate} */\n` +
     "var RAW = [\n" + lines.join(",\n") + "\n];\n" +
     "/* ADP:END */"
   );
@@ -134,18 +212,22 @@ function renderBlock(pool, scrapeDate) {
 const rows = await loadRankings();
 const pool = selectPool(rows);
 const scrapeDate = rows.find((r) => r.scrape_date)?.scrape_date ?? "unknown date";
+const sourceName =
+  argValue("--source") === "espn" || argValue("--espn-players")
+    ? "ESPN PPR average draft position"
+    : "FantasyPros PPR consensus";
 
 const htmlPath = new URL("./index.html", import.meta.url).pathname;
 const html = readFileSync(htmlPath, "utf8");
 const blockPattern = /\/\* ADP:BEGIN[^*]*\*\/[\s\S]*?\/\* ADP:END \*\//;
 if (!blockPattern.test(html)) throw new Error("could not find the ADP markers in index.html");
 
-const newBlock = renderBlock(pool, scrapeDate);
+const newBlock = renderBlock(pool, scrapeDate, sourceName);
 const oldBlock = html.match(blockPattern)[0];
 const withoutStamp = (s) => s.replace(/\/\* ADP:BEGIN[^*]*\*\//, "");
 
 if (withoutStamp(oldBlock) === withoutStamp(newBlock)) {
-  console.log(`The player pool already matches the ${scrapeDate} rankings, so nothing changed.`);
+  console.log(`The player pool already matches the ${scrapeDate} ${sourceName}, so nothing changed.`);
   process.exit(0);
 }
 
@@ -171,7 +253,7 @@ writeFileSync(
       .replace(versionPattern, `var SHARE_VERSION = ${nextVersion}; /* SHARE_VERSION_MARKER`)
 );
 
-console.log(`Wrote ${pool.length} players from the ${scrapeDate} FantasyPros PPR consensus.`);
+console.log(`Wrote ${pool.length} players from the ${scrapeDate} ${sourceName}.`);
 console.log(`${added.length} players joined the pool and ${removed.length} dropped out.`);
 console.log(
   `SHARE_VERSION moved from ${currentVersion} to ${nextVersion}, ` +

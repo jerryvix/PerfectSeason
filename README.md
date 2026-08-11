@@ -43,6 +43,20 @@ git add -A && git commit -m "refresh player pool" && git push
 Use `node update-adp.mjs --check` to see what a refresh would change without
 touching anything, and `--file` to apply a previously saved copy of the CSV.
 
+The default source is the FantasyPros consensus because it is reachable from
+essentially anywhere. If you would rather use ESPN's own average draft
+position, which records the order players actually came off the board in ESPN
+drafts instead of what analysts think, run `node update-adp.mjs --source espn`.
+ESPN blocks a fair number of networks, so if that request fails you can save
+the two responses yourself and hand them to the script:
+
+```bash
+curl -H 'X-Fantasy-Filter: {"players":{"limit":500,"sortDraftRanks":{"sortPriority":100,"sortAsc":true,"value":"PPR"}}}' \
+  "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2026/segments/0/leaguedefaults/3?view=kona_player_info" -o players.json
+curl "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2026/segments/0/leaguedefaults/3?view=proTeamSchedules_wl" -o schedule.json
+node update-adp.mjs --espn-players players.json --espn-schedule schedule.json
+```
+
 A refresh also advances the share-link version, which expires every link
 created before it. That is deliberate. A link replays a draft against the pool
 it was created from, so an old link opening against a new board would show a
