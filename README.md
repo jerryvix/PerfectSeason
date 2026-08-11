@@ -1,10 +1,11 @@
 # Perfect Season 🏈
 
-A single-file fantasy football game for the 2026 season. Draft an 8-man PPR
-roster through eight rounds of tier spins (10 candidates per pick from a
-116-player pool ordered by August 2026 12-team PPR ADP consensus), simulate a
-17-week season with variance-based scoring, and land on a final record and a
-team tier — Championship Threat down to Taco — then share it with a link.
+A single-file fantasy football game for the 2026 season. Live mock draft: you
+get a random slot in a 12-team snake and 11 CPU teams draft around you off
+August 2026 PPR ADP. Eight rounds, 96 picks, 116-player pool. Then your team
+plays a 17-week season against the rosters those CPU teams actually drafted,
+and the final record maps to a team tier, Championship Threat down to Taco.
+Share the whole season with a link.
 
 **Everything is one file: `index.html`.** No backend, no database, no accounts,
 no build step, no dependencies beyond Google Fonts.
@@ -14,14 +15,16 @@ no build step, no dependencies beyond Google Fonts.
 When a season finishes, "Copy Shareable Link" packs the entire result into the
 URL itself — no server ever stores anything:
 
-- `?s=<14 chars>` — a base64url payload: 4-bit version + 8 × 7-bit player pool
-  indexes (in slot order) + 17 × 1-bit win flags. That's the whole season.
+- `?s=<16 chars>` — a base64url payload: 4-bit version + 4-bit draft slot +
+  8 × 7-bit user pick indexes + a 32-bit RNG seed. Opening the link replays
+  the entire draft and season deterministically, so the shared page shows the
+  exact same CPU picks, weekly scores, and record. Nothing is stored anywhere.
 - `&n=<name>` — optional display name (max 20 chars), kept human-readable so
   the shared page can say "Jerry's Perfect Season."
 
-Anyone opening the link sees a read-only result card (record, tagline, week
-ticker, roster) and a "Draft Your Own Season" button. A malformed or corrupted
-`s` param silently falls back to the normal home screen — it never crashes.
+Anyone opening the link sees a read-only result card (record, tier, week
+ticker, season log, roster) and a "Draft Your Own Season" button. A malformed
+or corrupted `s` param silently falls back to the normal home screen.
 
 ## Run it locally
 
@@ -61,15 +64,16 @@ need to be re-dragged after each edit; the git route redeploys on `git push`).
 
 ## Game notes
 
-- Pool: 24 QB / 36 RB / 40 WR / 16 TE, ordered by ADP within position
-  (August 2026 12-team PPR consensus).
-- Draft order: QB, RB, RB, WR, WR, TE, FLEX, FLEX — each round spins inside a
-  tier band that widens automatically if it can't supply 10 undrafted
-  candidates.
-- Scoring (PPR): each player scores a gaussian around their PPR points per
-  game (σ = 28%), zero on their bye week; the opponent scores a gaussian
-  around the league-average starting eight. Bye weeks are invented — the real
-  2026 schedule wasn't out when this was built.
-- Team tiers by final record: 17-0 Perfect Season · 15+ Championship Threat ·
-  12+ Contender · 9+ Pretender · 5+ Basement Dweller · else Taco (yes, from
-  The League).
+- Pool: 24 QB / 36 RB / 40 WR / 16 TE in overall ADP order (August 2026
+  12-team PPR consensus).
+- Lineup: 1 QB, 2 RB, 2 WR, 1 TE, 2 FLEX. The board only offers picks that
+  can still complete a legal lineup.
+- Draft skill: every player's projected PPG deviates a fixed amount from his
+  ADP price. CPUs draft close to ADP; finding the discounts is your edge.
+- Season: 17 weeks against the 11 CPU rosters (round robin plus 6 rematches).
+  Each player scores a gaussian around his PPG (sigma 12%), zero on his bye.
+  Byes are invented, the real 2026 schedule wasn't out when this was built.
+- Calibration: value-hunting drafts average 11-12 wins, ADP-following about
+  9, careless drafting about 2. 17-0 is a sub-1% lottery ticket.
+- Team tiers by final record: 17-0 Perfect Season, 15+ Championship Threat,
+  12+ Contender, 9+ Pretender, 5+ Basement Dweller, else Taco.
