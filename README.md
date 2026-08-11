@@ -89,7 +89,17 @@ serve the directory instead with `python3 -m http.server` and visit
 
 ## Deploying it
 
-The project is a single static file, so Vercel needs no configuration at all.
+A GitHub Actions workflow already publishes the site to a `gh-pages` branch on
+every push, so the finished site is sitting in the repository waiting to be
+served. Turning it on takes one visit to the repository settings: open
+**Settings → Pages**, set the source to **Deploy from a branch**, choose
+**gh-pages** with the root folder, and save. About a minute later the game is
+live at `https://jerryvix.github.io/PerfectSeason/` and every future push
+updates it automatically. GitHub reserves that switch for the repository
+owner, which is why the workflow could not flip it by itself.
+
+Vercel is an equally good home, and the project needs no configuration there
+at all.
 Sign in at [vercel.com](https://vercel.com) with GitHub, choose **Add New →
 Project**, import this repository, leave every setting at its default, and
 deploy. Afterwards any `git push` redeploys the site automatically within about
