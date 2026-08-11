@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Perfect Season</title>
-<meta name="description" content="Mock draft against 11 teams, simulate a 17-week PPR season, share the result with a link.">
+<meta name="description" content="Draft against eleven other teams off the real PPR consensus board, then watch your roster play a full seventeen-week season and share how it went.">
 <meta property="og:title" content="Perfect Season">
-<meta property="og:description" content="Mock draft against 11 teams. Survive 17 weeks. Chase the 17-0.">
+<meta property="og:description" content="Eight picks against eleven other teams, then seventeen weeks to find out whether you drafted a contender.">
 <meta name="theme-color" content="#0e1216">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%88%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -210,7 +210,9 @@
   <!-- ============ HERO ============ -->
   <section class="screen" id="screen-hero">
     <h1>Chase<br>The <span>17-0</span></h1>
-    <p class="pitch">Mock draft against 11 teams. Survive 17 weeks. 12-team PPR, live ADP.</p>
+    <p class="pitch">You get a slot in a twelve-team PPR draft and eight picks to build
+      a roster off the real consensus board, and then your team plays a full season
+      against the eleven rosters everyone else just drafted.</p>
     <button class="btn btn-primary" id="btn-start">Start Your Draft</button>
   </section>
 
@@ -223,7 +225,7 @@
     <p id="draft-status"></p>
     <div id="feed-zone"><div id="draft-feed"></div></div>
     <div id="board-zone" class="hidden">
-      <div class="kicker">Best available. Pick one.</div>
+      <div class="kicker">The best players still on the board</div>
       <div id="board"></div>
     </div>
     <div class="kicker">Your Roster</div>
@@ -238,7 +240,7 @@
     <div class="field">
       <label for="name-input">Name your season <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
       <input id="name-input" type="text" maxlength="20" autocomplete="off" placeholder="e.g. Jerry" spellcheck="false">
-      <p class="hint">Shows on the share card.</p>
+      <p class="hint">Whatever you enter here is the name that appears when you share the season.</p>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="btn-simulate">Simulate Season</button>
@@ -285,78 +287,95 @@
 "use strict";
 
 /* =====================================================================
-   PLAYER POOL — 116 players in OVERALL ADP order. Array index =
-   overall ADP - 1 = the pool index that share links encode. Position
-   rank is derived while building POOL. PPG comes from a per-position
-   PPR decay curve. Tuples are [name, team, pos] or [name, team, pos,
-   bye]; without a bye the formula fallback in buildPool applies.
-   Refresh from ESPN with `node update-adp.mjs` (see README).
+   PLAYER POOL
+   116 players ordered by FantasyPros PPR consensus rank, which is the
+   same order the draft board uses and the same index that share links
+   encode. Each tuple holds the player's name, current team, position,
+   real bye week, and consensus rank. Running `node update-adp.mjs`
+   rewrites this block from the latest published rankings, so trades,
+   releases, and injuries all get picked up in a single refresh.
    ===================================================================== */
-/* ADP:BEGIN source: calibrated August 2026 consensus (search-derived) */
+/* ADP:BEGIN FantasyPros PPR consensus, scraped 2026-08-07 */
 var RAW = [
-  /* Round 1 (ADP 1-12) */
-  ["Jahmyr Gibbs","DET","RB"],["Bijan Robinson","ATL","RB"],["Puka Nacua","LAR","WR"],
-  ["Ja'Marr Chase","CIN","WR"],["Christian McCaffrey","SF","RB"],["Jaxon Smith-Njigba","SEA","WR"],
-  ["Justin Jefferson","MIN","WR"],["Saquon Barkley","PHI","RB"],["Ashton Jeanty","LV","RB"],
-  ["CeeDee Lamb","DAL","WR"],["Malik Nabers","NYG","WR"],["De'Von Achane","MIA","RB"],
-  /* Round 2 (13-24) */
-  ["Omarion Hampton","LAC","RB"],["Amon-Ra St. Brown","DET","WR"],["Brock Bowers","LV","TE"],
-  ["Nico Collins","HOU","WR"],["Derrick Henry","BAL","RB"],["Josh Allen","BUF","QB"],
-  ["Brian Thomas Jr.","JAX","WR"],["Lamar Jackson","BAL","QB"],["Trey McBride","ARI","TE"],
-  ["A.J. Brown","PHI","WR"],["Jonathan Taylor","IND","RB"],["Josh Jacobs","GB","RB"],
-  /* Round 3 (25-36) */
-  ["Jayden Daniels","WAS","QB"],["Drake London","ATL","WR"],["Kyren Williams","LAR","RB"],
-  ["Chase Brown","CIN","RB"],["Ladd McConkey","LAC","WR"],["Jalen Hurts","PHI","QB"],
-  ["Bucky Irving","TB","RB"],["Marvin Harrison Jr.","ARI","WR"],["Tee Higgins","CIN","WR"],
-  ["James Cook","BUF","RB"],["Garrett Wilson","NYJ","WR"],["Joe Burrow","CIN","QB"],
-  /* Round 4 (37-48) */
-  ["Kenneth Walker III","SEA","RB"],["Terry McLaurin","WAS","WR"],["Colston Loveland","CHI","TE"],
-  ["Breece Hall","NYJ","RB"],["Rashee Rice","KC","WR"],["Drake Maye","NE","QB"],
-  ["Davante Adams","LAR","WR"],["Quinshon Judkins","CLE","RB"],["Tyler Warren","IND","TE"],
-  ["Tyreek Hill","MIA","WR"],["TreVeyon Henderson","NE","RB"],["DK Metcalf","PIT","WR"],
-  /* Round 5 (49-60) */
-  ["DeVonta Smith","PHI","WR"],["Chuba Hubbard","CAR","RB"],["Zay Flowers","BAL","WR"],
-  ["James Conner","ARI","RB"],["Patrick Mahomes","KC","QB"],["Luther Burden III","CHI","WR"],
-  ["RJ Harvey","DEN","RB"],["DJ Moore","CHI","WR"],["Baker Mayfield","TB","QB"],
-  ["Alvin Kamara","NO","RB"],["Jaylen Waddle","MIA","WR"],["Tucker Kraft","GB","TE"],
-  /* Round 6 (61-72) */
-  ["George Kittle","SF","TE"],["Kaleb Johnson","PIT","RB"],["Mike Evans","TB","WR"],
-  ["Justin Herbert","LAC","QB"],["Joe Mixon","HOU","RB"],["Travis Hunter","JAX","WR"],
-  ["Bo Nix","DEN","QB"],["Aaron Jones","MIN","RB"],["Tetairoa McMillan","CAR","WR"],
-  ["Sam LaPorta","DET","TE"],["Emeka Egbuka","TB","WR"],["D'Andre Swift","CHI","RB"],
-  /* Round 7 (73-84) */
-  ["Caleb Williams","CHI","QB"],["Courtland Sutton","DEN","WR"],["Tony Pollard","TEN","RB"],
-  ["Xavier Worthy","KC","WR"],["T.J. Hockenson","MIN","TE"],["Isiah Pacheco","KC","RB"],
-  ["Jameson Williams","DET","WR"],["Jordan Love","GB","QB"],["Trey Benson","ARI","RB"],
-  ["George Pickens","DAL","WR"],["Kyler Murray","ARI","QB"],["David Njoku","CLE","TE"],
-  /* Round 8 (85-96) */
-  ["Rome Odunze","CHI","WR"],["Javonte Williams","DAL","RB"],["Brock Purdy","SF","QB"],
-  ["Matthew Golden","GB","WR"],["Jaylen Warren","PIT","RB"],["Evan Engram","DEN","TE"],
-  ["Chris Olave","NO","WR"],["C.J. Stroud","HOU","QB"],["Zach Charbonnet","SEA","RB"],
-  ["Calvin Ridley","TEN","WR"],["Mark Andrews","BAL","TE"],["Jared Goff","DET","QB"],
-  /* Late board (97-116) */
-  ["Tyrone Tracy Jr.","NYG","RB"],["Jordan Addison","MIN","WR"],["Dak Prescott","DAL","QB"],
-  ["Dalton Kincaid","BUF","TE"],["Brian Robinson Jr.","WAS","RB"],["Khalil Shakir","BUF","WR"],
-  ["Justin Fields","NYJ","QB"],["Rachaad White","TB","RB"],["Ricky Pearsall","SF","WR"],
-  ["J.J. McCarthy","MIN","QB"],["Jake Ferguson","DAL","TE"],["Najee Harris","LAC","RB"],
-  ["Tua Tagovailoa","MIA","QB"],["Dallas Goedert","PHI","TE"],["Trevor Lawrence","JAX","QB"],
-  ["Kyle Pitts","ATL","TE"],["Michael Penix Jr.","ATL","QB"],["Bryce Young","CAR","QB"],
-  ["Hunter Henry","NE","TE"],["Geno Smith","LV","QB"]
+  ["Ja'Marr Chase","CIN","WR",6,1.8],["Puka Nacua","LAR","WR",11,3.1],
+  ["Bijan Robinson","ATL","RB",11,3.3],["Jahmyr Gibbs","DET","RB",6,3.3],
+  ["Jaxon Smith-Njigba","SEA","WR",11,4.5],["Amon-Ra St. Brown","DET","WR",6,5.9],
+  ["Christian McCaffrey","SF","RB",8,8.6],["CeeDee Lamb","DAL","WR",14,8.8],
+  ["Justin Jefferson","MIN","WR",6,9.2],["Jonathan Taylor","IND","RB",13,11.9],
+  ["Drake London","ATL","WR",11,12.9],["A.J. Brown","NE","WR",11,15.2],
+  ["Nico Collins","HOU","WR",8,16.6],["Ashton Jeanty","LV","RB",13,16.8],
+  ["Chase Brown","CIN","RB",6,18.6],["James Cook III","BUF","RB",7,19.1],
+  ["Trey McBride","ARI","TE",14,19.1],["George Pickens","DAL","WR",14,19.2],
+  ["Rashee Rice","KC","WR",5,20.1],["Brock Bowers","LV","TE",13,20.4],
+  ["De'Von Achane","MIA","RB",6,21],["Chris Olave","NO","WR",8,21.7],
+  ["DeVonta Smith","PHI","WR",10,24.4],["Omarion Hampton","LAC","RB",7,24.7],
+  ["Saquon Barkley","PHI","RB",10,25.2],["Josh Allen","BUF","QB",7,25.9],
+  ["Kenneth Walker III","KC","RB",5,29.6],["Zay Flowers","BAL","WR",13,29.9],
+  ["Garrett Wilson","NYJ","WR",13,30.7],["Lamar Jackson","BAL","QB",13,32.3],
+  ["Malik Nabers","NYG","WR",8,33.4],["Tetairoa McMillan","CAR","WR",5,33.5],
+  ["Tee Higgins","CIN","WR",6,35.3],["Ladd McConkey","LAC","WR",7,35.9],
+  ["Colston Loveland","CHI","TE",10,37.3],["Jaylen Waddle","DEN","WR",10,37.4],
+  ["Derrick Henry","BAL","RB",13,37.6],["Emeka Egbuka","TB","WR",10,37.7],
+  ["Drake Maye","NE","QB",11,38.3],["Jeremiyah Love","ARI","RB",14,38.4],
+  ["Breece Hall","NYJ","RB",13,40.1],["Kyren Williams","LAR","RB",11,42.1],
+  ["Terry McLaurin","WAS","WR",7,43.7],["Josh Jacobs","GB","RB",11,43.9],
+  ["Luther Burden III","CHI","WR",10,45.3],["Javonte Williams","DAL","RB",14,45.7],
+  ["Joe Burrow","CIN","QB",6,46.4],["Davante Adams","LAR","WR",11,49.1],
+  ["Travis Etienne Jr.","NO","RB",8,49.7],["Jayden Daniels","WAS","QB",7,51],
+  ["Mike Evans","SF","WR",8,51.7],["DJ Moore","BUF","WR",7,53.6],
+  ["Cam Skattebo","NYG","RB",8,53.6],["Tyler Warren","IND","TE",13,53.7],
+  ["Jameson Williams","DET","WR",6,55.4],["Christian Watson","GB","WR",11,57.7],
+  ["Jalen Hurts","PHI","QB",10,58.4],["Rome Odunze","CHI","WR",10,59.4],
+  ["Bucky Irving","TB","RB",10,60],["D'Andre Swift","CHI","RB",10,60.1],
+  ["Quinshon Judkins","CLE","RB",11,60.8],["David Montgomery","HOU","RB",8,62.5],
+  ["TreVeyon Henderson","NE","RB",11,64.1],["Carnell Tate","TEN","WR",9,66.8],
+  ["Caleb Williams","CHI","QB",10,68.6],["Justin Herbert","LAC","QB",7,69.6],
+  ["Bhayshul Tuten","JAX","RB",7,69.9],["Marvin Harrison Jr.","ARI","WR",14,70.2],
+  ["Harold Fannin Jr.","CLE","TE",11,75.1],["Jaylen Warren","PIT","RB",9,75.3],
+  ["Tucker Kraft","GB","TE",11,75.6],["Jadarian Price","SEA","RB",11,76.7],
+  ["Trevor Lawrence","JAX","QB",7,77.3],["Brian Thomas Jr.","JAX","WR",7,77.3],
+  ["DK Metcalf","PIT","WR",9,78],["Parker Washington","JAX","WR",7,78.3],
+  ["Chris Godwin Jr.","TB","WR",10,79.7],["Dak Prescott","DAL","QB",14,80],
+  ["Kyle Pitts Sr.","ATL","TE",11,80.4],["Rhamondre Stevenson","NE","RB",11,82.4],
+  ["Michael Pittman Jr.","PIT","WR",9,82.5],["Courtland Sutton","DEN","WR",10,82.7],
+  ["Alec Pierce","IND","WR",13,82.7],["Tony Pollard","TEN","RB",9,83.7],
+  ["Sam LaPorta","DET","TE",6,84.6],["Chuba Hubbard","CAR","RB",5,85.9],
+  ["Wan'Dale Robinson","TEN","WR",9,87.3],["Josh Downs","IND","WR",13,87.8],
+  ["Rico Dowdle","PIT","RB",9,88.8],["Jaxson Dart","NYG","QB",8,93.2],
+  ["RJ Harvey","DEN","RB",10,94.4],["Brock Purdy","SF","QB",8,95.3],
+  ["Travis Kelce","KC","TE",5,98.1],["Kenny Gainwell","TB","RB",10,100.3],
+  ["Bo Nix","DEN","QB",10,101.3],["J.K. Dobbins","DEN","RB",10,101.4],
+  ["Patrick Mahomes II","KC","QB",5,101.9],["Matthew Stafford","LAR","QB",11,104.1],
+  ["Kyle Monangai","CHI","RB",10,104.3],["Rachaad White","WAS","RB",7,106.2],
+  ["George Kittle","SF","TE",8,106.2],["Jared Goff","DET","QB",6,108.1],
+  ["Jake Ferguson","DAL","TE",14,110.8],["Kyler Murray","MIN","QB",6,111.8],
+  ["Dalton Kincaid","BUF","TE",7,114.7],["Baker Mayfield","TB","QB",10,118.2],
+  ["Jordan Love","GB","QB",11,119.7],["Tyler Shough","NO","QB",8,121.9],
+  ["Dallas Goedert","PHI","TE",10,122.4],["Isaiah Likely","NYG","TE",8,122.6],
+  ["Mark Andrews","BAL","TE",13,125.7],["Malik Willis","MIA","QB",6,131.5],
+  ["C.J. Stroud","HOU","QB",8,142.3],["Sam Darnold","SEA","QB",11,142.8],
+  ["Juwan Johnson","NO","TE",8,148.3],["Cam Ward","TEN","QB",9,154.1]
 ];
 /* ADP:END */
 
-/* PPR points-per-game curves: [base for rank 1, decay]. */
-var PPG_CURVE = { QB:[24,0.65], RB:[23,0.55], WR:[22,0.48], TE:[18,0.85] };
-
-/* Value spread: each player's projection deviates from his ADP price by
-   a fixed, deterministic amount. Positive = market discount, negative =
-   overpriced. This is where draft skill lives: the board is sorted by
-   ADP, but the PPG number tells you who is actually worth the pick. */
-var VALUE_AMP = 1.8;
-function valueWobble(idx){
-  var r = mulberry32(((idx + 1) * 2654435761) >>> 0)();
-  return (r * 2 - 1) * VALUE_AMP;
-}
+/* Projected PPR points per game by position rank, taken from FantasyPros
+   PPR projections. The four curves fall at very different rates, and that
+   is where the draft decisions live: the second-best tight end outscores
+   the twentieth-best receiver, even though the board prices them within a
+   few picks of each other. */
+var PPG_TABLE = {
+  QB: [22.1,21.3,20.5,19.9,19.6,19.3,19.2,19.0,18.8,18.4,18.0,17.6,
+       17.3,17.1,16.9,16.7,16.3,15.8,15.4,15.0,14.6,14.3,14.0,13.8],
+  RB: [22.5,22.0,20.8,20.8,18.0,17.4,17.4,17.2,16.7,15.3,15.2,15.0,
+       15.0,14.8,14.6,14.5,14.4,13.8,13.7,13.7,13.5,13.5,13.4,13.1,
+       12.3,12.3,12.0,11.8,11.4,11.2,11.0,10.8,9.7,9.6,9.2,9.0],
+  WR: [22.7,21.5,21.1,18.9,17.5,17.5,16.7,16.1,15.3,15.2,15.0,14.6,
+       14.4,14.3,14.2,13.8,13.5,13.4,13.3,13.3,13.2,13.1,12.8,12.5,
+       12.4,11.9,11.8,11.8,11.7,11.4,11.3,11.2,11.2,11.1,11.1,10.7,
+       10.7,10.7,10.5,10.5],
+  TE: [18.8,15.8,12.3,11.7,11.7,11.3,10.8,10.6,10.6,10.1,9.8,9.7,
+       9.6,9.6,9.5,9.1]
+};
 
 var POOL = [];
 (function buildPool(){
@@ -364,12 +383,10 @@ var POOL = [];
   RAW.forEach(function(entry, idx){
     var pos = entry[2];
     var rank = counts[pos]++;
-    var curve = PPG_CURVE[pos];
-    var val = Math.round(valueWobble(idx) * 10) / 10;
-    var ppg = Math.round((curve[0] - curve[1] * Math.pow(rank, 0.9) + val) * 10) / 10;
-    POOL.push({ idx: idx, adp: idx + 1, pos: pos, rank: rank,
-                name: entry[0], team: entry[1], ppg: ppg, val: val,
-                bye: entry.length > 3 ? entry[3] : 5 + ((idx * 7) % 10) });
+    var table = PPG_TABLE[pos];
+    POOL.push({ idx: idx, pos: pos, rank: rank,
+                name: entry[0], team: entry[1], bye: entry[3], ecr: entry[4],
+                ppg: table[Math.min(rank, table.length - 1)] });
   });
 })();
 var POOL_SIZE = POOL.length; // 116
@@ -459,16 +476,17 @@ function applyPick(game, t, player){
   game.pickNo++;
 }
 
-/* CPU pick: best available by ADP plus noise, within caps/feasibility.
-   CPUs price in only part of a player's value spread; the rest is the
-   user's edge to find. */
+/* The computer teams draft the consensus board with a little noise, so
+   they reach and they fall the way a real room does. They never reason
+   about how steeply a position scores, which is the opening the drafter
+   is meant to find. */
 function cpuPick(game, t){
   var roster = game.teams[t];
   var best = null, bestScore = Infinity;
   for (var i = 0; i < POOL.length; i++){
     var p = POOL[i];
     if (game.taken[p.idx] || !legalForRoster(roster, p, CPU_CAPS)) continue;
-    var score = p.adp - p.val * 1.0 + gauss(game.rng, 0, 6);
+    var score = p.ecr + gauss(game.rng, 0, 6);
     if (score < bestScore){ bestScore = score; best = p; }
   }
   if (!best){ /* caps too tight this late; fall back to any feasible player */
@@ -485,9 +503,10 @@ function cpuPick(game, t){
   return best;
 }
 
-/* The user's board: top 10 available by straight ADP, legal only. If a
-   depleted pool leaves no legal pick, degrade to plain best available
-   so the draft can always finish. */
+/* The board shows the ten best players still available by consensus
+   rank, filtered to those who can still complete a legal lineup. If a
+   depleted pool ever leaves nothing legal, it falls back to plain best
+   available so the draft can always finish. */
 function boardFor(game){
   var roster = game.teams[game.userTeam];
   var out = [];
@@ -505,10 +524,10 @@ function boardFor(game){
 
 /* =====================================================================
    SEASON SIMULATION — 17 weeks against the 11 rosters the CPU teams
-   actually drafted. Round robin, then 6 seeded rematches. Each player
-   scores a gaussian around his PPG floored at 0, or 0 on his bye.
-   Calibrated so value-hunting drafts average ~11-12 wins, ADP-following
-   ~9, careless ~2, and 17-0 is a sub-1% lottery ticket.
+   actually drafted, playing each of them once and then six of them a
+   second time. Every player draws a score around his projection and
+   contributes nothing during his bye week, so a roster that stacks its
+   byes into one weekend will feel it.
    ===================================================================== */
 var WEEKLY_SIGMA = 0.12;
 function scoreRoster(rng, roster, week){
@@ -564,7 +583,7 @@ function tierFor(wins){
    picks at the user's turns, then re-runs the season. Anything
    malformed throws; the boot sequence catches and shows the hero.
    ===================================================================== */
-var SHARE_VERSION = 3; /* SHARE_VERSION_MARKER: bumped by update-adp.mjs on data refresh */
+var SHARE_VERSION = 4; /* SHARE_VERSION_MARKER: bumped by update-adp.mjs on data refresh */
 
 function encodeShare(game){
   var bits = [];
@@ -780,7 +799,7 @@ function startDraft(){
   $("draft-feed").textContent = "";
   $("board").textContent = "";
   $("board-zone").classList.add("hidden");
-  setStatus("You have the No. " + slot + " pick", false);
+  setStatus("You are drafting from the number " + slot + " slot", false);
   renderDraftHead();
   renderRosterRows($("mini-roster"), game.userPicks);
   showScreen("screen-draft");
@@ -829,7 +848,7 @@ function advanceDraft(){
       clearInterval(cpuTimer); cpuTimer = null;
       renderBoard(); return;
     }
-    setStatus(teamName(game, team) + " on the clock", false);
+    setStatus(teamName(game, team) + " is on the clock", false);
     var pickNo = game.pickNo;
     applyPick(game, team, cpuPick(game, team));
     addFeedRow(game, team, game.teams[team][game.teams[team].length - 1], pickNo);
@@ -839,7 +858,7 @@ function advanceDraft(){
 
 function renderBoard(){
   renderDraftHead();
-  setStatus("You're on the clock", true);
+  setStatus("You are on the clock", true);
   var box = $("board");
   box.textContent = "";
   boardFor(game).forEach(function(p){
@@ -851,7 +870,7 @@ function renderBoard(){
     nm.className = "nm"; nm.textContent = p.name;
     var meta = document.createElement("div");
     meta.className = "meta";
-    meta.innerHTML = "ADP " + p.adp + " · " + p.pos + (p.rank + 1) + " · " + p.team +
+    meta.innerHTML = "ECR " + p.ecr.toFixed(1) + " · " + p.pos + (p.rank + 1) + " · " + p.team +
       " · <b>" + p.ppg.toFixed(1) + "</b> · bye " + p.bye;
     card.appendChild(nm); card.appendChild(meta);
     card.addEventListener("click", function(){ userPick(p); });
