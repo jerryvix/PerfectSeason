@@ -186,10 +186,17 @@
   }
   .season-log .lg .wk{width:34px;flex:none}
   .season-log .lg .op{width:66px;flex:none;color:var(--text)}
-  .season-log .lg .sc{flex:1;text-align:right}
+  .season-log .lg .sc{flex:1;text-align:right;white-space:pre}
   .season-log .lg .rs{width:16px;flex:none;text-align:right;font-weight:700}
   .season-log .lg .rs.w{color:var(--turf)}
   .season-log .lg .rs.l{color:var(--rust)}
+
+  .log-total{
+    display:flex;justify-content:space-between;
+    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+    color:var(--text);padding:7px 0 14px;
+  }
+  .log-total span:last-child{color:var(--muted);font-weight:400}
 
   .roster-list{text-align:left;border-top:1px solid var(--line);padding-top:6px}
   .roster-list .row{
@@ -257,6 +264,7 @@
       <div class="proj" id="result-proj"></div>
       <div class="ticker" id="result-ticker"></div>
       <div class="season-log" id="result-log"></div>
+      <div class="log-total" id="result-total"></div>
       <div class="roster-list" id="result-roster"></div>
     </div>
     <div class="btn-row" id="result-actions">
@@ -275,6 +283,7 @@
       <div class="proj" id="shared-proj"></div>
       <div class="ticker" id="shared-ticker"></div>
       <div class="season-log" id="shared-log"></div>
+      <div class="log-total" id="shared-total"></div>
       <div class="roster-list" id="shared-roster"></div>
     </div>
     <div class="btn-row">
@@ -486,7 +495,10 @@ function cpuPick(game, t){
   for (var i = 0; i < POOL.length; i++){
     var p = POOL[i];
     if (game.taken[p.idx] || !legalForRoster(roster, p, CPU_CAPS)) continue;
-    var score = p.ecr + gauss(game.rng, 0, 6);
+    /* The noise grows with a player's rank because that is how real rooms
+       behave: the first round follows consensus almost exactly, while the
+       late rounds are full of reaches and personal favorites. */
+    var score = p.ecr + gauss(game.rng, 0, 2 + p.ecr * 0.06);
     if (score < bestScore){ bestScore = score; best = p; }
   }
   if (!best){ /* caps too tight this late; fall back to any feasible player */
@@ -529,12 +541,16 @@ function boardFor(game){
    contributes nothing during his bye week, so a roster that stacks its
    byes into one weekend will feel it.
    ===================================================================== */
-var WEEKLY_SIGMA = 0.12;
+/* Week-to-week swing differs by position. Quarterbacks are the steadiest
+   scorers in PPR, backs and receivers swing harder with game script, and
+   tight ends are the most touchdown-dependent of all, so each position
+   gets its own variance rather than one shared number. */
+var WEEKLY_SIGMA = { QB: 0.10, RB: 0.13, WR: 0.13, TE: 0.16 };
 function scoreRoster(rng, roster, week){
   var total = 0;
   roster.forEach(function(p){
     if (p.bye === week) return;
-    total += Math.max(0, gauss(rng, p.ppg, WEEKLY_SIGMA * p.ppg));
+    total += Math.max(0, gauss(rng, p.ppg, WEEKLY_SIGMA[p.pos] * p.ppg));
   });
   return Math.round(total * 10) / 10;
 }
@@ -583,7 +599,7 @@ function tierFor(wins){
    picks at the user's turns, then re-runs the season. Anything
    malformed throws; the boot sequence catches and shows the hero.
    ===================================================================== */
-var SHARE_VERSION = 4; /* SHARE_VERSION_MARKER: bumped by update-adp.mjs on data refresh */
+var SHARE_VERSION = 5; /* SHARE_VERSION_MARKER: bumped by update-adp.mjs on data refresh */
 
 function encodeShare(game){
   var bits = [];
@@ -768,6 +784,17 @@ function setProj(el, g){
     " PPG · League median " + leagueMedian(g).toFixed(1);
 }
 
+function setSeasonTotals(el, g){
+  var scored = 0, allowed = 0;
+  g.weeks.forEach(function(w){ scored += w.team; allowed += w.oppScore; });
+  el.textContent = "";
+  var label = document.createElement("span");
+  label.textContent = scored.toFixed(1) + " scored";
+  var against = document.createElement("span");
+  against.textContent = allowed.toFixed(1) + " allowed";
+  el.appendChild(label); el.appendChild(against);
+}
+
 function renderSeasonLog(container, g){
   container.textContent = "";
   g.weeks.forEach(function(w){
@@ -778,7 +805,8 @@ function renderSeasonLog(container, g){
     var op = document.createElement("span");
     op.className = "op"; op.textContent = teamName(g, w.opp);
     var sc = document.createElement("span");
-    sc.className = "sc"; sc.textContent = w.team.toFixed(1) + " - " + w.oppScore.toFixed(1);
+    sc.className = "sc";
+    sc.textContent = w.team.toFixed(1).padStart(5) + " - " + w.oppScore.toFixed(1).padStart(5);
     var rs = document.createElement("span");
     rs.className = "rs " + (w.win ? "w" : "l");
     rs.textContent = w.win ? "W" : "L";
@@ -904,7 +932,7 @@ function runSeason(){
   $("result-title").textContent = name ? name + "’s Perfect Season" : "Your Perfect Season";
   var ticker = $("result-ticker");
   ticker.textContent = "";
-  ["result-record","result-tier","result-proj","result-log","result-actions"].forEach(function(id){
+  ["result-record","result-tier","result-proj","result-log","result-total","result-actions"].forEach(function(id){
     $(id).classList.add("hidden");
   });
   renderResultRoster($("result-roster"), game);
@@ -922,7 +950,8 @@ function runSeason(){
     setTier($("result-tier"), game.wins);
     setProj($("result-proj"), game);
     renderSeasonLog($("result-log"), game);
-    ["result-record","result-tier","result-proj","result-log","result-actions"].forEach(function(id){
+    setSeasonTotals($("result-total"), game);
+    ["result-record","result-tier","result-proj","result-log","result-total","result-actions"].forEach(function(id){
       $(id).classList.remove("hidden");
     });
   }, 120 * 17 + 220);
@@ -934,8 +963,11 @@ function recapText(){
   lines.push((game.name ? game.name + "'s" : "My") + " Perfect Season 2026");
   lines.push(game.wins + "-" + (17 - game.wins) + " · " + tier.name);
   lines.push(game.weeks.map(function(w){ return w.win ? "W" : "L"; }).join(" "));
+  var scored = 0, allowed = 0;
+  game.weeks.forEach(function(w){ scored += w.team; allowed += w.oppScore; });
   lines.push("Projected " + projPpg(game.teams[game.userTeam]).toFixed(1) +
              " PPG · League median " + leagueMedian(game).toFixed(1));
+  lines.push(scored.toFixed(1) + " scored · " + allowed.toFixed(1) + " allowed");
   lines.push("");
   assignSlots(game.userPicks).forEach(function(entry){
     if (!entry.player) return;
@@ -983,6 +1015,7 @@ function renderShared(g, name){
       w.team.toFixed(1) + " - " + w.oppScore.toFixed(1)));
   });
   renderSeasonLog($("shared-log"), g);
+  setSeasonTotals($("shared-total"), g);
   renderResultRoster($("shared-roster"), g);
   showScreen("screen-shared");
 }
