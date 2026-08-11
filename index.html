@@ -285,12 +285,14 @@
 "use strict";
 
 /* =====================================================================
-   PLAYER POOL — 116 players in OVERALL ADP order (August 2026 12-team
-   PPR consensus). Array index = overall ADP - 1 = the pool index that
-   share links encode. Position rank is derived while building POOL.
-   PPG comes from a per-position PPR decay curve; bye weeks are invented
-   purely for in-game texture.
+   PLAYER POOL — 116 players in OVERALL ADP order. Array index =
+   overall ADP - 1 = the pool index that share links encode. Position
+   rank is derived while building POOL. PPG comes from a per-position
+   PPR decay curve. Tuples are [name, team, pos] or [name, team, pos,
+   bye]; without a bye the formula fallback in buildPool applies.
+   Refresh from ESPN with `node update-adp.mjs` (see README).
    ===================================================================== */
+/* ADP:BEGIN source: calibrated August 2026 consensus (search-derived) */
 var RAW = [
   /* Round 1 (ADP 1-12) */
   ["Jahmyr Gibbs","DET","RB"],["Bijan Robinson","ATL","RB"],["Puka Nacua","LAR","WR"],
@@ -341,6 +343,7 @@ var RAW = [
   ["Kyle Pitts","ATL","TE"],["Michael Penix Jr.","ATL","QB"],["Bryce Young","CAR","QB"],
   ["Hunter Henry","NE","TE"],["Geno Smith","LV","QB"]
 ];
+/* ADP:END */
 
 /* PPR points-per-game curves: [base for rank 1, decay]. */
 var PPG_CURVE = { QB:[24,0.65], RB:[23,0.55], WR:[22,0.48], TE:[18,0.85] };
@@ -366,7 +369,7 @@ var POOL = [];
     var ppg = Math.round((curve[0] - curve[1] * Math.pow(rank, 0.9) + val) * 10) / 10;
     POOL.push({ idx: idx, adp: idx + 1, pos: pos, rank: rank,
                 name: entry[0], team: entry[1], ppg: ppg, val: val,
-                bye: 5 + ((idx * 7) % 10) });
+                bye: entry.length > 3 ? entry[3] : 5 + ((idx * 7) % 10) });
   });
 })();
 var POOL_SIZE = POOL.length; // 116
@@ -561,7 +564,7 @@ function tierFor(wins){
    picks at the user's turns, then re-runs the season. Anything
    malformed throws; the boot sequence catches and shows the hero.
    ===================================================================== */
-var SHARE_VERSION = 3;
+var SHARE_VERSION = 3; /* SHARE_VERSION_MARKER: bumped by update-adp.mjs on data refresh */
 
 function encodeShare(game){
   var bits = [];
